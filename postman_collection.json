@@ -1,0 +1,1164 @@
+{
+  "info": {
+    "name": "Personelim API",
+    "description": "Node.js backend API for user authentication",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Business Owner\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('token', response.token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('token', response.token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Register Employee User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"employeeId\": \"EMPLOYEE_ID_HERE\",\n  \"email\": \"employee@example.com\",\n  \"password\": \"Employee123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register-employee",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register-employee"]
+        }
+      }
+    },
+    {
+      "name": "Get My Employee Data",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "me"]
+        }
+      }
+    },
+    {
+      "name": "Update My Employee Data",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phoneNumber\": \"+905551234567\",\n  \"address\": \"New Address\",\n  \"profilePictureUrl\": \"https://example.com/photo.jpg\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/employees/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "me"]
+        }
+      }
+    },
+    {
+      "name": "Get My Leaves",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/me/leaves?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "me", "leaves"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "status",
+              "value": "pending",
+              "disabled": true
+            },
+            {
+              "key": "type",
+              "value": "yıllık",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create My Leave Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"yıllık\",\n  \"startDate\": \"2024-12-20\",\n  \"endDate\": \"2024-12-25\",\n  \"reason\": \"Annual vacation\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/employees/me/leaves",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "me", "leaves"]
+        }
+      }
+    },
+    {
+      "name": "Get Own Advance Requests (Employee)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/me/advances?page=1&limit=10&status=pending",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "me", "advances"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "status",
+              "value": "pending"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Advance Request (Employee)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 5000.50,\n  \"reason\": \"Emergency expense advance request\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/employees/me/advances",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "me", "advances"]
+        }
+      }
+    },
+    {
+      "name": "Logout User",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "logout"]
+        }
+      }
+    },
+    {
+      "name": "Get Current User",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "me"]
+        }
+      }
+    },
+    {
+      "name": "Get All Users (Admin)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/users",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "users"]
+        }
+      }
+    },
+    {
+      "name": "Get Deleted Users (Admin)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/users/deleted",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "users", "deleted"]
+        }
+      }
+    },
+    {
+      "name": "Restore User (Admin)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/users/USER_UID_HERE/restore",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "users", "USER_UID_HERE", "restore"]
+        }
+      }
+    },
+    {
+      "name": "Update Profile",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Name\",\n  \"role\": \"user\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/update",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "update"]
+        }
+      }
+    },
+    {
+      "name": "Delete User (Admin)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/users/USER_UID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "users", "USER_UID_HERE"]
+        }
+      }
+    },
+    {
+      "name": "Admin Only Endpoint",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/admin-only",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "admin-only"]
+        }
+      }
+    },
+    {
+      "name": "Register Admin User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Admin User\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin123456\",\n  \"role\": \"admin\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "Get All Employees",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Search Employees",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees?search=john&page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees"],
+          "query": [
+            {
+              "key": "search",
+              "value": "john"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Employees by Department",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees?department=IT&page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees"],
+          "query": [
+            {
+              "key": "department",
+              "value": "IT"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Deleted Employees",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/deleted?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "deleted"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Employee Statistics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/statistics",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "statistics"]
+        }
+      }
+    },
+    {
+      "name": "Get Employee by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/EMPLOYEE_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "EMPLOYEE_ID_HERE"]
+        }
+      }
+    },
+    {
+      "name": "Create Employee",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@company.com\",\n  \"phoneNumber\": \"+905551234567\",\n  \"tcKimlikNo\": \"12345678901\",\n  \"dateOfBirth\": \"1990-01-15T00:00:00.000Z\",\n  \"gender\": \"Male\",\n  \"address\": \"Istanbul, Turkey\",\n  \"position\": \"Software Developer\",\n  \"department\": \"IT\",\n  \"contractType\": \"Belirsiz Süreli\",\n  \"workingHoursPerDay\": 8,\n  \"startDate\": \"2024-01-01T00:00:00.000Z\",\n  \"salary\": {\n    \"grossAmount\": 50000,\n    \"netAmount\": 38000,\n    \"currency\": \"TL\",\n    \"bankName\": \"Ziraat Bankası\",\n    \"iban\": \"TR123456789012345678901234\"\n  },\n  \"insuranceInfo\": {\n    \"sicilNo\": \"123456789\",\n    \"startDate\": \"2024-01-01T00:00:00.000Z\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/employees",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees"]
+        }
+      }
+    },
+    {
+      "name": "Update Employee",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"John Updated\",\n  \"lastName\": \"Doe Updated\",\n  \"position\": \"Senior Software Developer\",\n  \"department\": \"IT\",\n  \"salary\": {\n    \"grossAmount\": 60000,\n    \"netAmount\": 45000,\n    \"currency\": \"TL\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/employees/EMPLOYEE_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "EMPLOYEE_ID_HERE"]
+        }
+      }
+    },
+    {
+      "name": "Delete Employee",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/EMPLOYEE_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "EMPLOYEE_ID_HERE"]
+        }
+      }
+    },
+    {
+      "name": "Restore Employee",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/EMPLOYEE_ID_HERE/restore",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "EMPLOYEE_ID_HERE", "restore"]
+        }
+      }
+    },
+    {
+      "name": "Get My Business",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/business/my",
+          "host": ["{{baseUrl}}"],
+          "path": ["business", "my"]
+        }
+      }
+    },
+    {
+      "name": "Update My Business",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Teknoloji Şirketi A.Ş.\",\n  \"address\": \"Maslak Mahallesi, Teknoloji Caddesi No: 123, Sarıyer/İstanbul\",\n  \"phone\": \"+905551234567\",\n  \"email\": \"info@teknoloji.com\",\n  \"logoUrl\": \"https://example.com/logo.png\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/business/my",
+          "host": ["{{baseUrl}}"],
+          "path": ["business", "my"]
+        }
+      }
+    },
+    {
+      "name": "Get Business by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/business/BUSINESS_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["business", "BUSINESS_ID_HERE"]
+        }
+      }
+    },
+    {
+      "name": "Create Employee Leave",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"yıllık\",\n  \"startDate\": \"2024-12-20\",\n  \"endDate\": \"2024-12-25\",\n  \"reason\": \"Yılbaşı tatili\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/employees/EMPLOYEE_ID_HERE/leaves",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "EMPLOYEE_ID_HERE", "leaves"]
+        }
+      }
+    },
+    {
+      "name": "Get Employee Leaves",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/EMPLOYEE_ID_HERE/leaves?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "EMPLOYEE_ID_HERE", "leaves"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "status",
+              "value": "pending",
+              "disabled": true
+            },
+            {
+              "key": "approved",
+              "value": "true",
+              "disabled": true
+            },
+            {
+              "key": "type",
+              "value": "yıllık",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Single Employee Leave",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/EMPLOYEE_ID_HERE/leaves/LEAVE_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "EMPLOYEE_ID_HERE", "leaves", "LEAVE_ID_HERE"]
+        }
+      }
+    },
+    {
+      "name": "Update Employee Leave",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"mazeret\",\n  \"startDate\": \"2024-12-20\",\n  \"endDate\": \"2024-12-22\",\n  \"reason\": \"Doktor randevusu\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/employees/EMPLOYEE_ID_HERE/leaves/LEAVE_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "EMPLOYEE_ID_HERE", "leaves", "LEAVE_ID_HERE"]
+        }
+      }
+    },
+    {
+      "name": "Approve Employee Leave",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"approved\",\n  \"approvalNote\": \"Onaylandı\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/employees/EMPLOYEE_ID_HERE/leaves/LEAVE_ID_HERE/approve",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "EMPLOYEE_ID_HERE", "leaves", "LEAVE_ID_HERE", "approve"]
+        }
+      }
+    },
+    {
+      "name": "Delete Employee Leave",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/EMPLOYEE_ID_HERE/leaves/LEAVE_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "EMPLOYEE_ID_HERE", "leaves", "LEAVE_ID_HERE"]
+        }
+      }
+    },
+    {
+      "name": "Get Employee Leave Statistics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/employees/EMPLOYEE_ID_HERE/leaves/statistics",
+          "host": ["{{baseUrl}}"],
+          "path": ["employees", "EMPLOYEE_ID_HERE", "leaves", "statistics"]
+        }
+      }
+    },
+    {
+      "name": "Create Advance Request (Employee)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 5000.50,\n  \"reason\": \"Acil masraf için avans talebi\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/advances",
+          "host": ["{{baseUrl}}"],
+          "path": ["advances"]
+        }
+      }
+    },
+    {
+      "name": "Create Advance Request (Owner/Manager for Employee)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 3000.00,\n  \"reason\": \"Personel için avans talebi\",\n  \"employeeId\": \"EMPLOYEE_ID_HERE\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/advances",
+          "host": ["{{baseUrl}}"],
+          "path": ["advances"]
+        }
+      }
+    },
+    {
+      "name": "Get All Advance Requests",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/advances?page=1&limit=10&status=pending",
+          "host": ["{{baseUrl}}"],
+          "path": ["advances"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "status",
+              "value": "pending"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Advance Requests for Specific Employee",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/advances?employeeId=EMPLOYEE_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["advances"],
+          "query": [
+            {
+              "key": "employeeId",
+              "value": "EMPLOYEE_ID_HERE"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Specific Advance Request",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/advances/EMPLOYEE_ID_HERE/ADVANCE_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["advances", "EMPLOYEE_ID_HERE", "ADVANCE_ID_HERE"]
+        }
+      }
+    },
+    {
+      "name": "Update Advance Request",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 4000.00,\n  \"reason\": \"Güncellenmiş avans talebi\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/advances/EMPLOYEE_ID_HERE/ADVANCE_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["advances", "EMPLOYEE_ID_HERE", "ADVANCE_ID_HERE"]
+        }
+      }
+    },
+    {
+      "name": "Approve Advance Request",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"approvalNote\": \"Onaylandı\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/advances/EMPLOYEE_ID_HERE/ADVANCE_ID_HERE/approve",
+          "host": ["{{baseUrl}}"],
+          "path": ["advances", "EMPLOYEE_ID_HERE", "ADVANCE_ID_HERE", "approve"]
+        }
+      }
+    },
+    {
+      "name": "Reject Advance Request",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"approvalNote\": \"Red nedeni: Bütçe yetersizliği\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/advances/EMPLOYEE_ID_HERE/ADVANCE_ID_HERE/reject",
+          "host": ["{{baseUrl}}"],
+          "path": ["advances", "EMPLOYEE_ID_HERE", "ADVANCE_ID_HERE", "reject"]
+        }
+      }
+    },
+    {
+      "name": "Delete Advance Request",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/advances/EMPLOYEE_ID_HERE/ADVANCE_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["advances", "EMPLOYEE_ID_HERE", "ADVANCE_ID_HERE"]
+        }
+      }
+    },
+    {
+      "name": "Get Advance Request Statistics (All Employees)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/advances/statistics?year=2024",
+          "host": ["{{baseUrl}}"],
+          "path": ["advances", "statistics"],
+          "query": [
+            {
+              "key": "year",
+              "value": "2024"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Advance Request Statistics (Specific Employee)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/advances/statistics/EMPLOYEE_ID_HERE?year=2024",
+          "host": ["{{baseUrl}}"],
+          "path": ["advances", "statistics", "EMPLOYEE_ID_HERE"],
+          "query": [
+            {
+              "key": "year",
+              "value": "2024"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
