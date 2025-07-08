@@ -26,6 +26,46 @@ app.use("/employees/:employeeId/leaves", leaveRoutes);
 app.use("/advances", advanceRoutes);
 app.use("/business", businessRoutes);
 
+// Anasayfa root route
+app.get("/", (req, res) => {
+  res.send("👋 Personelim API is working. Go to /health or /api-docs");
+});
+
+
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check endpoint
+ *     tags: [System]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: API health status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "OK"
+ *                 message:
+ *                   type: string
+ *                   example: "Personelim API is running"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 firestore:
+ *                   type: string
+ *                   enum: ["Connected", "Disconnected", "Error"]
+ *                 database:
+ *                   type: string
+ *                   example: "Firestore"
+ *                 error:
+ *                   type: string
+ *                   description: Error message if firestore connection fails
+ */
 // Health check route with Firestore status
 app.get("/health", async (req, res) => {
   try {
