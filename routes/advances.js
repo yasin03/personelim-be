@@ -9,6 +9,13 @@ const {
   isManagerOrOwner,
 } = require("../middleware/auth");
 
+/**
+ * @swagger
+ * tags:
+ *   name: Advances
+ *   description: Employee advance payment management
+ */
+
 // Error handling helper
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -103,6 +110,74 @@ router.post(
   }
 );
 
+/**
+ * @swagger
+ * /advances:
+ *   get:
+ *     summary: Get advance requests
+ *     tags: [Advances]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: employeeId
+ *         schema:
+ *           type: string
+ *         description: Filter by specific employee (Manager/Owner only)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, approved, rejected]
+ *         description: Filter by status
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Number of records per page
+ *     responses:
+ *       200:
+ *         description: Advance requests retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         advances:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/AdvanceRequest'
+ *                         pagination:
+ *                           type: object
+ *                           properties:
+ *                             page:
+ *                               type: integer
+ *                             limit:
+ *                               type: integer
+ *                             total:
+ *                               type: integer
+ *                             totalPages:
+ *                               type: integer
+ *       401:
+ *         description: Authentication required
+ *       500:
+ *         description: Internal server error
+ */
 // Get advance requests (Employee sees only their own, Owner/Manager see all or specific employee)
 router.get("/", authenticateToken, async (req, res) => {
   try {

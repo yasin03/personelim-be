@@ -1,18 +1,73 @@
 # Personelim API
 
-Node.js backend API for user authentication using Express.js, Firebase Firestore, JWT tokens, and bcrypt password hashing.
+Gelişmiş bir personel yönetim sistemi için Node.js backend API. Express.js, Firebase Firestore, JWT token'ları ve bcrypt password hashing kullanarak tam kapsamlı bir insan kaynakları çözümü sunar.
 
-## Features
+## 🚀 Özellikler
 
-- **User Registration**: Register new users with name, email, password, and role
-- **User Login**: Authenticate users with email and password
-- **JWT Authentication**: Secure token-based authentication
-- **Password Hashing**: Secure password storage using bcrypt
-- **Firebase Firestore**: Cloud-based NoSQL database
-- **Role-based Access**: Support for admin and user roles
-- **Input Validation**: Comprehensive request validation
-- **Error Handling**: Proper error responses with status codes
-- **Security**: CORS, Helmet, and other security middleware
+### Kimlik Doğrulama ve Yetkilendirme
+
+- **Kullanıcı Kaydı**: İsim, email, şifre ve rol ile yeni kullanıcı kaydı
+- **Kullanıcı Girişi**: Email ve şifre ile kimlik doğrulama
+- **JWT Authentication**: Güvenli token tabanlı kimlik doğrulama
+- **Rol Tabanlı Erişim**: Owner, Manager ve Employee rollerini destekler
+- **Şifre Güvenliği**: bcrypt ile güvenli şifre saklama
+
+### İşletme Yönetimi
+
+- **İşletme Profili**: İşletme bilgilerini yönetme
+- **Otomatik İşletme Kurulumu**: Owner kaydında otomatik işletme oluşturma
+
+### Personel Yönetimi
+
+- **Personel CRUD**: Tam personel yaşam döngüsü yönetimi
+- **Personel Arama**: İsim, email, departman bazlı arama
+- **Personel Filtreleme**: Departman, pozisyon gibi kriterlere göre filtreleme
+- **Sayfalama**: Büyük veri setleri için sayfalama desteği
+
+### İzin Yönetimi
+
+- **İzin Talepleri**: Günlük, yıllık, mazeret izni talepleri
+- **İzin Onay Sistemi**: Manager/Owner onay süreci
+- **İzin Takibi**: Personel izin geçmişi ve durumu
+- **İzin İstatistikleri**: Departman ve personel bazlı raporlar
+
+### Avans Yönetimi
+
+- **Avans Talepleri**: Personel avans talep sistemi
+- **Avans Onay Süreci**: Manager/Owner onay sistemi
+- **Avans Takibi**: Avans geçmişi ve geri ödeme takibi
+- **Avans Raporları**: İstatistiksel raporlar
+
+### Puantaj Sistemi
+
+- **Çalışma Saatleri**: Günlük çalışma saati kayıtları
+- **Mesai Takibi**: Normal ve fazla mesai hesaplamaları
+- **Puantaj Raporları**: Aylık ve dönemsel puantaj raporları
+- **Otomatik Hesaplamalar**: Toplam çalışma saati hesaplamaları
+
+### Bordro Sistemi
+
+- **Bordro Oluşturma**: Aylık bordro hesaplamaları
+- **Maaş Hesaplamaları**: Temel maaş, mesai, kesinti hesaplamaları
+- **Bordro Raporları**: Detaylı bordro raporları
+- **PDF Export**: Bordro PDF çıktısı (gelecek özellik)
+
+### Maaş Ödeme Yönetimi
+
+- **Ödeme Kayıtları**: Maaş ödeme takibi
+- **Ödeme Durumu**: Ödenen/bekleyen ödemeler
+- **Ödeme Geçmişi**: Personel ödeme geçmişi
+- **Ödeme Raporları**: Finansal raporlar
+
+### Güvenlik ve Performans
+
+- **CORS Desteği**: Cross-origin resource sharing
+- **Helmet Güvenlik**: HTTP header güvenliği
+- **Input Validasyonu**: Kapsamlı giriş validasyonu
+- **Hata Yönetimi**: Detaylı hata mesajları ve logları
+- **Firebase Firestore**: Bulut tabanlı NoSQL veritabanı
+
+## 📚 API Dokümantasyonu
 
 ## Prerequisites
 
@@ -94,6 +149,32 @@ npm start
 ```
 
 The API will be available at `http://localhost:3000`
+
+## API Documentation
+
+### Swagger/OpenAPI Documentation
+
+Interactive API documentation is available via Swagger UI:
+
+- **Main Documentation**: `http://localhost:3000/api-docs`
+- **Quick Access**: `http://localhost:3000/docs` (redirects to api-docs)
+
+The Swagger documentation includes:
+
+- Complete endpoint specifications with request/response schemas
+- Interactive testing interface for all endpoints
+- Authentication examples with JWT token support
+- Model definitions and validation rules
+- Example requests and responses
+
+### Testing the API
+
+You can test the API using:
+
+1. **Swagger UI**: Interactive web interface at `/api-docs`
+2. **Postman Collection**: Import the provided `postman_collection.json`
+3. **curl commands**: Examples provided below
+4. **Any HTTP client**: Use the OpenAPI specification
 
 ## API Endpoints
 
@@ -487,6 +568,132 @@ The API will be available at `http://localhost:3000`
 - **Description**: Get advance request statistics
 - **Query Parameters**:
   - `year` (optional): Year for statistics (default: current year)
+
+### Timesheet Management (Puantaj)
+
+#### Create Timesheet
+
+- **POST** `/api/employees/:employeeId/timesheets`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+- **Description**: Employees can create for themselves, owners/managers for any employee
+- **Body**:
+
+```json
+{
+  "date": "2025-07-07",
+  "status": "Çalıştı",
+  "checkInTime": "09:00",
+  "checkOutTime": "17:00",
+  "overtimeHours": 1.5,
+  "notes": "Extra overtime for project deadline"
+}
+```
+
+#### Get Timesheets
+
+- **GET** `/api/employees/:employeeId/timesheets`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+- **Query Parameters**:
+  - `month` (optional): Month filter (1-12)
+  - `year` (optional): Year filter
+  - `status` (optional): Status filter
+  - `page`, `limit`: Pagination
+
+#### Update Timesheet
+
+- **PUT** `/api/employees/:employeeId/timesheets/:timesheetId`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+
+#### Delete Timesheet
+
+- **DELETE** `/api/employees/:employeeId/timesheets/:timesheetId`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+
+#### Get Timesheet Statistics
+
+- **GET** `/api/employees/:employeeId/timesheets/statistics`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+- **Query Parameters**:
+  - `month`, `year`: Filter options
+
+### Payroll Management (Bordro)
+
+#### Create Payroll (Owner/Manager Only)
+
+- **POST** `/api/employees/:employeeId/payrolls`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+- **Body**:
+
+```json
+{
+  "periodMonth": "07",
+  "periodYear": "2025",
+  "grossSalary": 15000.0,
+  "totalDeductions": 3000.0,
+  "insurancePremiumEmployeeShare": 1500.0,
+  "insurancePremiumEmployerShare": 2000.0,
+  "taxDeduction": 1500.0,
+  "otherAdditions": 500.0,
+  "currency": "TL"
+}
+```
+
+#### Get Payrolls
+
+- **GET** `/api/employees/:employeeId/payrolls`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+- **Query Parameters**:
+  - `year`, `status`, `page`, `limit`
+
+#### Get Specific Payroll
+
+- **GET** `/api/employees/:employeeId/payrolls/:payrollId`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+
+#### Mark Payroll as Paid (Owner/Manager Only)
+
+- **PATCH** `/api/employees/:employeeId/payrolls/:payrollId/pay`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+
+#### Get Payroll Statistics
+
+- **GET** `/api/employees/:employeeId/payrolls/statistics`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+
+### Salary Payment Management (Maaş Ödemesi)
+
+#### Create Salary Payment (Owner/Manager Only)
+
+- **POST** `/api/employees/:employeeId/salary-payments`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+- **Body**:
+
+```json
+{
+  "amount": 12000.0,
+  "payrollId": "payroll-id-here",
+  "paymentMethod": "Banka Havalesi",
+  "description": "July 2025 salary payment",
+  "currency": "TL"
+}
+```
+
+#### Get Salary Payments
+
+- **GET** `/api/employees/:employeeId/salary-payments`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+- **Query Parameters**:
+  - `year`, `paymentMethod`, `startDate`, `endDate`, `page`, `limit`
+
+#### Get Salary Payment Statistics
+
+- **GET** `/api/employees/:employeeId/salary-payments/statistics`
+- **Headers**: `Authorization: Bearer <jwt-token>`
+
+#### Get Salary Payments by Payroll
+
+- **GET** `/api/employees/:employeeId/salary-payments/by-payroll/:payrollId`
+- **Headers**: `Authorization: Bearer <jwt-token>`
 
 ### Health Check
 

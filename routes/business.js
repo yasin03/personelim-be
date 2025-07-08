@@ -5,6 +5,13 @@ const { authenticateToken } = require("../middleware/auth");
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Business
+ *   description: Business information management
+ */
+
 // Validation middleware
 const validateBusiness = [
   body("name")
