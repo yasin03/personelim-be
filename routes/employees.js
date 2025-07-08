@@ -5,6 +5,13 @@ const { authenticateToken, isManagerOrOwner } = require("../middleware/auth");
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Employees
+ *   description: Employee management endpoints
+ */
+
 // Validation middleware
 const validateEmployee = [
   body("firstName")
@@ -207,6 +214,75 @@ router.put(
   }
 );
 
+/**
+ * @swagger
+ * /employees:
+ *   get:
+ *     summary: Get all employees
+ *     tags: [Employees]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Number of employees per page
+ *       - in: query
+ *         name: department
+ *         schema:
+ *           type: string
+ *         description: Filter by department
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search employees by name or email
+ *     responses:
+ *       200:
+ *         description: Employees retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         employees:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Employee'
+ *                         pagination:
+ *                           type: object
+ *                           properties:
+ *                             page:
+ *                               type: integer
+ *                             limit:
+ *                               type: integer
+ *                             total:
+ *                               type: integer
+ *                             totalPages:
+ *                               type: integer
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Insufficient permissions (manager/owner required)
+ *       500:
+ *         description: Internal server error
+ */
 // GET /employees - Get all employees for authenticated user (only for owner/manager)
 router.get("/", authenticateToken, isManagerOrOwner, async (req, res) => {
   try {
@@ -354,6 +430,88 @@ router.get(
   }
 );
 
+/**
+ * @swagger
+ * /employees:
+ *   post:
+ *     summary: Create a new employee
+ *     tags: [Employees]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - lastName
+ *               - email
+ *               - position
+ *               - department
+ *               - salary
+ *               - hireDate
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *                 example: "John"
+ *               lastName:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *                 example: "Doe"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john.doe@company.com"
+ *               position:
+ *                 type: string
+ *                 example: "Software Developer"
+ *               department:
+ *                 type: string
+ *                 example: "IT"
+ *               salary:
+ *                 type: number
+ *                 minimum: 0
+ *                 example: 50000
+ *               hireDate:
+ *                 type: string
+ *                 format: date
+ *                 example: "2024-01-15"
+ *               tcKimlikNo:
+ *                 type: string
+ *                 pattern: '^[0-9]{11}$'
+ *                 example: "12345678901"
+ *               phone:
+ *                 type: string
+ *                 example: "+90 555 123 4567"
+ *               address:
+ *                 type: string
+ *                 example: "123 Main St, Istanbul"
+ *     responses:
+ *       201:
+ *         description: Employee created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Employee'
+ *       400:
+ *         description: Validation error or employee already exists
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Insufficient permissions (manager/owner required)
+ *       500:
+ *         description: Internal server error
+ */
 // POST /employees - Create new employee (only for owner/manager)
 router.post(
   "/",

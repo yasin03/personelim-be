@@ -69,6 +69,7 @@ typings/
 .env
 .env.test
 .env.local
+.env.example
 .env.production
 serviceAccountKey.json
 
