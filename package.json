@@ -1,7 +1,7 @@
 {
   "name": "personelim",
   "version": "1.0.0",
-  "description": "Node.js backend API for user authentication with Firebase Firestore",
+  "description": "Comprehensive personnel management system backend API with authentication, employee management, leaves, advances, timesheets, payrolls and salary payments using Node.js, Express.js and Firebase Firestore",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -26,7 +26,9 @@
     "express-validator": "^7.2.1",
     "firebase-admin": "^13.4.0",
     "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
