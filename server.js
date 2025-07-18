@@ -33,15 +33,37 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Personelim API Documentation',
-  customfavIcon: '/favicon.ico'
-}));
+app.use("/api-docs", swaggerUi.serve);
+app.get(
+  "/api-docs",
+  swaggerUi.setup(specs, {
+    customCss: ".swagger-ui .topbar { display: none }",
+    customSiteTitle: "Personelim API Documentation",
+    customfavIcon: "/favicon.ico",
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      docExpansion: "none",
+      filter: true,
+      showExtensions: true,
+      showCommonExtensions: true,
+      tryItOutEnabled: true,
+    },
+  })
+);
 
 // API Documentation redirect
-app.get('/docs', (req, res) => {
-  res.redirect('/api-docs');
+app.get("/docs", (req, res) => {
+  res.redirect("/api-docs");
+});
+
+// Test endpoint for Swagger
+app.get("/swagger-test", (req, res) => {
+  res.json({
+    message: "Swagger is working!",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+  });
 });
 
 // Routes
@@ -58,7 +80,6 @@ app.use("/business", businessRoutes);
 app.get("/", (req, res) => {
   res.send("👋 Personelim API is working. Go to /health or /api-docs");
 });
-
 
 /**
  * @swagger

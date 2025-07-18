@@ -24,8 +24,8 @@ const options = {
         description: "Development server",
       },
       {
-        url: "https://api.personelim.com",
-        description: "Production server",
+        url: "https://personelim-be.vercel.app",
+        description: "Production server (Vercel)",
       },
     ],
     components: {
@@ -384,6 +384,10 @@ const options = {
     "./routes/*.js", // Tüm route dosyalarını tarar
     "./models/*.js", // Model dosyalarını da tarar
     "./server.js", // Ana server dosyasını tarar
+    // Vercel için absolute paths
+    "routes/*.js",
+    "models/*.js",
+    "server.js",
   ],
 };
 
