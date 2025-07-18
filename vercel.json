@@ -7,27 +7,22 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api-docs/(.*)",
-      "dest": "server.js"
+      "source": "/api-docs/(.*)",
+      "destination": "/server.js"
     },
     {
-      "src": "/docs",
-      "dest": "server.js"
+      "source": "/docs",
+      "destination": "/server.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "server.js"
+      "source": "/(.*)",
+      "destination": "/server.js"
     }
   ],
   "env": {
     "NODE_ENV": "production"
-  },
-  "functions": {
-    "server.js": {
-      "maxDuration": 30
-    }
   },
   "headers": [
     {
