@@ -7,11 +7,26 @@ let firebaseApp;
 try {
   // For production, use service account key from environment
   if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+    console.log("🔧 Using FIREBASE_SERVICE_ACCOUNT_KEY from environment");
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
     firebaseApp = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
       projectId: process.env.FIREBASE_PROJECT_ID,
     });
+    console.log(
+      "✅ Firebase initialized with service account from environment"
+    );
+  } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    // Fallback for different environment variable name
+    console.log("🔧 Using FIREBASE_SERVICE_ACCOUNT from environment");
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    firebaseApp = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      projectId: process.env.FIREBASE_PROJECT_ID,
+    });
+    console.log(
+      "✅ Firebase initialized with service account from environment"
+    );
   } else {
     // For development, try to use service account file
     try {
