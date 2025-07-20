@@ -5,12 +5,6 @@ const Payroll = require("../models/Payroll");
 const Employee = require("../models/Employee");
 const { authenticateToken, isManagerOrOwner } = require("../middleware/auth");
 
-/**
- * @swagger
- * tags:
- *   name: Payrolls
- *   description: Employee payroll management
- */
 
 // Error handling helper
 const handleValidationErrors = (req, res, next) => {
