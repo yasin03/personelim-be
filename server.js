@@ -13,15 +13,9 @@ const payrollRoutes = require("./routes/payrolls");
 const salaryPaymentRoutes = require("./routes/salaryPayments");
 const { testFirestoreConnection } = require("./utils/firestore");
 
-// Swagger configuration
-const { specs, swaggerUi } = require("./config/swagger");
-
-/**
- * @swagger
- * tags:
- *   name: System
- *   description: System health and status endpoints
- */
+// Redoc configuration
+const { loadOpenAPISpec, generateRedocHTML } = require("./config/redoc");
+const { generateSimpleHTML } = require("./config/simple-docs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,39 +26,52 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//last config
-// Swagger Documentation
-app.use("/api-docs", swaggerUi.serve);
-app.get(
-  "/api-docs",
-  swaggerUi.setup(specs, {
-    customCss: ".swagger-ui .topbar { display: none }",
-    customSiteTitle: "Personelim API Documentation",
-    customfavIcon: "/favicon.ico",
-    swaggerOptions: {
-      persistAuthorization: true,
-      displayRequestDuration: true,
-      docExpansion: "none",
-      filter: true,
-      showExtensions: true,
-      showCommonExtensions: true,
-      tryItOutEnabled: true,
-    },
-  })
-);
+// API Documentation with Redoc
+app.get("/openapi.json", (req, res) => {
+  const spec = loadOpenAPISpec();
+  if (spec) {
+    res.json(spec);
+  } else {
+    res.status(500).json({ error: "Could not load OpenAPI specification" });
+  }
+});
+
+app.get("/api-docs", (req, res) => {
+  const spec = loadOpenAPISpec();
+  if (spec) {
+    const html = generateRedocHTML(spec);
+    res.setHeader("Content-Type", "text/html");
+    res.send(html);
+  } else {
+    res.status(500).send("Could not load API documentation");
+  }
+});
+
+// Simple HTML documentation as fallback
+app.get("/api-docs-simple", (req, res) => {
+  const spec = loadOpenAPISpec();
+  if (spec) {
+    const html = generateSimpleHTML(spec);
+    res.setHeader("Content-Type", "text/html");
+    res.send(html);
+  } else {
+    res.status(500).send("Could not load API documentation");
+  }
+});
+
+// Test endpoint to debug
+app.get("/api-docs-debug", (req, res) => {
+  const spec = loadOpenAPISpec();
+  res.json({
+    specExists: !!spec,
+    specKeys: spec ? Object.keys(spec) : null,
+    pathsCount: spec?.paths ? Object.keys(spec.paths).length : 0,
+  });
+});
 
 // API Documentation redirect
 app.get("/docs", (req, res) => {
   res.redirect("/api-docs");
-});
-
-// Test endpoint for Swagger
-app.get("/swagger-test", (req, res) => {
-  res.json({
-    message: "Swagger is working!",
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || "development",
-  });
 });
 
 // Routes
@@ -82,40 +89,6 @@ app.get("/", (req, res) => {
   res.send("👋 Personelim API is working. Go to /health or /api-docs");
 });
 
-/**
- * @swagger
- * /health:
- *   get:
- *     summary: Health check endpoint
- *     tags: [System]
- *     security: []
- *     responses:
- *       200:
- *         description: API health status
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "OK"
- *                 message:
- *                   type: string
- *                   example: "Personelim API is running"
- *                 timestamp:
- *                   type: string
- *                   format: date-time
- *                 firestore:
- *                   type: string
- *                   enum: ["Connected", "Disconnected", "Error"]
- *                 database:
- *                   type: string
- *                   example: "Firestore"
- *                 error:
- *                   type: string
- *                   description: Error message if firestore connection fails
- */
 // Health check route with Firestore status
 app.get("/health", async (req, res) => {
   try {

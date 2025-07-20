@@ -5,12 +5,6 @@ const Timesheet = require("../models/Timesheet");
 const Employee = require("../models/Employee");
 const { authenticateToken, isManagerOrOwner } = require("../middleware/auth");
 
-/**
- * @swagger
- * tags:
- *   name: Timesheets
- *   description: Employee timesheet and working hours management
- */
 
 // Error handling helper
 const handleValidationErrors = (req, res, next) => {

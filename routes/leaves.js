@@ -6,12 +6,6 @@ const { authenticateToken, isManagerOrOwner } = require("../middleware/auth");
 
 const router = express.Router({ mergeParams: true }); // mergeParams to access employeeId from parent route
 
-/**
- * @swagger
- * tags:
- *   name: Leaves
- *   description: Employee leave management
- */
 
 // Validation middleware
 const validateLeave = [
