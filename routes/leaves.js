@@ -1,11 +1,10 @@
 const express = require("express");
 const { body, validationResult, param } = require("express-validator");
 const Leave = require("../models/Leave");
-const Employee = require("../models/Employee");
+const { Employee } = require("../models/Employee");
 const { authenticateToken, isManagerOrOwner } = require("../middleware/auth");
 
 const router = express.Router({ mergeParams: true }); // mergeParams to access employeeId from parent route
-
 
 // Validation middleware
 const validateLeave = [

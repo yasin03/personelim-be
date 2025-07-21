@@ -1,10 +1,9 @@
 const express = require("express");
 const { body, validationResult, param, query } = require("express-validator");
-const Employee = require("../models/Employee");
+const { Employee, CONTRACT_TYPES, WORK_MODES } = require("../models/Employee");
 const { authenticateToken, isManagerOrOwner } = require("../middleware/auth");
 
 const router = express.Router();
-
 
 // Validation middleware
 const validateEmployee = [
@@ -42,8 +41,12 @@ const validateEmployee = [
     .withMessage("Department must be between 2 and 100 characters"),
   body("contractType")
     .optional()
-    .isIn(["Belirsiz Süreli", "Belirli Süreli", "Part-time", "Stajyer"])
-    .withMessage("Invalid contract type"),
+    .isIn(CONTRACT_TYPES)
+    .withMessage(`Contract type must be one of: ${CONTRACT_TYPES.join(", ")}`),
+  body("workMode")
+    .optional()
+    .isIn(WORK_MODES)
+    .withMessage(`Work mode must be one of: ${WORK_MODES.join(", ")}`),
   body("workingHoursPerDay")
     .optional()
     .isFloat({ min: 1, max: 24 })
@@ -803,5 +806,46 @@ router.post(
     }
   }
 );
+
+// @route   GET /employees/contract-types
+// @desc    Get available contract types
+// @access  Private (Manager/Owner)
+router.get(
+  "/contract-types",
+  authenticateToken,
+  isManagerOrOwner,
+  (req, res) => {
+    try {
+      res.status(200).json({
+        message: "Contract types retrieved successfully",
+        contractTypes: CONTRACT_TYPES,
+      });
+    } catch (error) {
+      console.error("Get contract types error:", error);
+      res.status(500).json({
+        error: "Internal server error",
+        message: "Failed to get contract types",
+      });
+    }
+  }
+);
+
+// @route   GET /employees/work-modes
+// @desc    Get available work modes
+// @access  Private (Manager/Owner)
+router.get("/work-modes", authenticateToken, isManagerOrOwner, (req, res) => {
+  try {
+    res.status(200).json({
+      message: "Work modes retrieved successfully",
+      workModes: WORK_MODES,
+    });
+  } catch (error) {
+    console.error("Get work modes error:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to get work modes",
+    });
+  }
+});
 
 module.exports = router;

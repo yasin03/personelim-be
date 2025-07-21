@@ -93,6 +93,16 @@
             "type": "string",
             "description": "Department name"
           },
+          "contractType": {
+            "type": "string",
+            "enum": ["Belirsiz Süreli", "Belirli Süreli", "Kısmi Süreli", "Çağrı Üzerine", "Deneme Süreli"],
+            "description": "Contract type"
+          },
+          "workMode": {
+            "type": "string",
+            "enum": ["Tam Zamanlı", "Yarı Zamanlı", "Part-time", "Hibrit", "Uzaktan (Remote)"],
+            "description": "Work mode"
+          },
           "salary": {
             "type": "number",
             "description": "Monthly salary amount"
@@ -156,6 +166,10 @@
     {
       "name": "Authentication",
       "description": "User authentication and authorization"
+    },
+    {
+      "name": "Employees",
+      "description": "Employee management operations"
     },
     {
       "name": "System",
@@ -441,6 +455,78 @@
                     "error": {
                       "type": "string",
                       "description": "Error message if firestore connection fails"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/employees/contract-types": {
+      "get": {
+        "summary": "Get available contract types",
+        "tags": ["Employees"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract types retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Contract types retrieved successfully"
+                    },
+                    "contractTypes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": ["Belirsiz Süreli", "Belirli Süreli", "Kısmi Süreli", "Çağrı Üzerine", "Deneme Süreli"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/employees/work-modes": {
+      "get": {
+        "summary": "Get available work modes",
+        "tags": ["Employees"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Work modes retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Work modes retrieved successfully"
+                    },
+                    "workModes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": ["Tam Zamanlı", "Yarı Zamanlı", "Part-time", "Hibrit", "Uzaktan (Remote)"]
                     }
                   }
                 }

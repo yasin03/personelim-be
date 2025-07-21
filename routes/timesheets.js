@@ -2,9 +2,8 @@ const express = require("express");
 const { body, param, query, validationResult } = require("express-validator");
 const router = express.Router({ mergeParams: true });
 const Timesheet = require("../models/Timesheet");
-const Employee = require("../models/Employee");
+const { Employee } = require("../models/Employee");
 const { authenticateToken, isManagerOrOwner } = require("../middleware/auth");
-
 
 // Error handling helper
 const handleValidationErrors = (req, res, next) => {
