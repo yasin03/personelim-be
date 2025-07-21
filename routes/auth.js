@@ -10,7 +10,7 @@ const {
 } = require("../middleware/auth");
 const User = require("../models/User");
 const Business = require("../models/Business");
-const Employee = require("../models/Employee");
+const { Employee } = require("../models/Employee");
 
 const router = express.Router();
 

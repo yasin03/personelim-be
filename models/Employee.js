@@ -1,5 +1,23 @@
 const { db, COLLECTIONS } = require("../config/firebase");
 
+// Contract types constant
+const CONTRACT_TYPES = [
+  "Belirsiz Süreli",
+  "Belirli Süreli",
+  "Kısmi Süreli",
+  "Çağrı Üzerine",
+  "Deneme Süreli",
+];
+
+// Work modes constant
+const WORK_MODES = [
+  "Tam Zamanlı",
+  "Yarı Zamanlı",
+  "Part-time",
+  "Hibrit",
+  "Uzaktan (Remote)",
+];
+
 class Employee {
   constructor(data) {
     this.userId = data.userId; // Kullanıcının UID'si (personel login olacağı için gerekli)
@@ -16,6 +34,7 @@ class Employee {
     this.position = data.position || null;
     this.department = data.department || null;
     this.contractType = data.contractType || "Belirsiz Süreli";
+    this.workMode = data.workMode || "Tam Zamanlı";
     this.workingHoursPerDay = data.workingHoursPerDay || 8;
     this.startDate = data.startDate || null;
     this.terminationDate = data.terminationDate || null;
@@ -65,6 +84,7 @@ class Employee {
         position: employee.position,
         department: employee.department,
         contractType: employee.contractType,
+        workMode: employee.workMode,
         workingHoursPerDay: employee.workingHoursPerDay,
         startDate: employee.startDate,
         terminationDate: employee.terminationDate,
@@ -500,6 +520,30 @@ class Employee {
     // Owners and managers see all data
     return employeeData;
   }
+
+  // Get contract types
+  static getContractTypes() {
+    return CONTRACT_TYPES;
+  }
+
+  // Get work modes
+  static getWorkModes() {
+    return WORK_MODES;
+  }
+
+  // Validate contract type
+  static isValidContractType(contractType) {
+    return CONTRACT_TYPES.includes(contractType);
+  }
+
+  // Validate work mode
+  static isValidWorkMode(workMode) {
+    return WORK_MODES.includes(workMode);
+  }
 }
 
-module.exports = Employee;
+module.exports = {
+  Employee,
+  CONTRACT_TYPES,
+  WORK_MODES,
+};
