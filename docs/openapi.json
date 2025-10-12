@@ -1,16 +1,17 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.0.3",
   "info": {
-    "title": "Personelim API",
+    "title": "Personelim API - Personnel Management System",
     "version": "1.0.0",
-    "description": "Node.js backend API for personnel management system with authentication, employee management, leaves, advances, timesheets, payrolls, and salary payments.",
+    "description": "Comprehensive personnel management system REST API with authentication, employee management, leave tracking, advance requests, timesheets, payroll management, and salary payments. Built with Node.js, Express.js, and Firebase Firestore.",
     "contact": {
-      "name": "API Support",
-      "email": "support@personelim.com"
+      "name": "Personelim API Support",
+      "email": "support@personelim.com",
+      "url": "https://personelim-be.vercel.app"
     },
     "license": {
-      "name": "MIT",
-      "url": "https://opensource.org/licenses/MIT"
+      "name": "ISC",
+      "url": "https://opensource.org/licenses/ISC"
     }
   },
   "servers": [
@@ -23,13 +24,51 @@
       "description": "Production server (Vercel)"
     }
   ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User authentication and authorization endpoints"
+    },
+    {
+      "name": "Employees",
+      "description": "Employee management operations"
+    },
+    {
+      "name": "Leaves",
+      "description": "Leave request management"
+    },
+    {
+      "name": "Advances",
+      "description": "Salary advance request management"
+    },
+    {
+      "name": "Timesheets",
+      "description": "Employee timesheet and attendance tracking"
+    },
+    {
+      "name": "Payrolls",
+      "description": "Payroll management and calculations"
+    },
+    {
+      "name": "Salary Payments",
+      "description": "Salary payment tracking"
+    },
+    {
+      "name": "Business",
+      "description": "Business information management"
+    },
+    {
+      "name": "System",
+      "description": "System health and status endpoints"
+    }
+  ],
   "components": {
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\""
+        "description": "Enter your JWT token in the format: Bearer {token}"
       }
     },
     "schemas": {
@@ -51,21 +90,24 @@
           },
           "role": {
             "type": "string",
-            "enum": ["owner", "manager", "employee"],
+            "enum": ["owner", "manager", "employee", "admin"],
             "description": "User role in the system"
           },
           "businessId": {
             "type": "string",
-            "description": "Business identifier"
+            "description": "Associated business identifier"
           },
           "employeeId": {
             "type": "string",
-            "description": "Employee identifier (for employee role)"
+            "description": "Associated employee identifier (for employee role)"
           },
           "createdAt": {
             "type": "string",
-            "format": "date-time",
-            "description": "Account creation timestamp"
+            "format": "date-time"
+          },
+          "lastLogin": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -73,48 +115,386 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string",
-            "description": "Employee unique identifier"
+            "type": "string"
           },
-          "name": {
-            "type": "string",
-            "description": "Employee full name"
+          "userId": {
+            "type": "string"
+          },
+          "employeeCode": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
           },
           "email": {
             "type": "string",
-            "format": "email",
-            "description": "Employee email address"
+            "format": "email"
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "tcKimlikNo": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
           },
           "position": {
-            "type": "string",
-            "description": "Job position"
+            "type": "string"
           },
           "department": {
-            "type": "string",
-            "description": "Department name"
+            "type": "string"
           },
           "contractType": {
             "type": "string",
-            "enum": ["Belirsiz Süreli", "Belirli Süreli", "Kısmi Süreli", "Çağrı Üzerine", "Deneme Süreli"],
-            "description": "Contract type"
+            "enum": ["Belirsiz Süreli", "Belirli Süreli", "Kısmi Süreli", "Çağrı Üzerine", "Deneme Süreli"]
           },
           "workMode": {
             "type": "string",
-            "enum": ["Tam Zamanlı", "Yarı Zamanlı", "Part-time", "Hibrit", "Uzaktan (Remote)"],
-            "description": "Work mode"
+            "enum": ["Tam Zamanlı", "Yarı Zamanlı", "Part-time", "Hibrit", "Uzaktan (Remote)"]
+          },
+          "workingHoursPerDay": {
+            "type": "number",
+            "default": 8
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "terminationDate": {
+            "type": "string",
+            "format": "date"
           },
           "salary": {
-            "type": "number",
-            "description": "Monthly salary amount"
+            "type": "object",
+            "properties": {
+              "grossAmount": {
+                "type": "number"
+              },
+              "netAmount": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string",
+                "enum": ["TL", "USD", "EUR"]
+              },
+              "bankName": {
+                "type": "string"
+              },
+              "iban": {
+                "type": "string"
+              }
+            }
           },
-          "hireDate": {
+          "insuranceInfo": {
+            "type": "object",
+            "properties": {
+              "sicilNo": {
+                "type": "string"
+              },
+              "startDate": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          },
+          "createdAt": {
             "type": "string",
-            "format": "date",
-            "description": "Hiring date (YYYY-MM-DD)"
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Leave": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
           },
           "userId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "type": {
             "type": "string",
-            "description": "Associated user account ID"
+            "enum": ["günlük", "yıllık", "mazeret"]
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "totalDays": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"]
+          },
+          "approved": {
+            "type": "boolean"
+          },
+          "approvedBy": {
+            "type": "string"
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approvalNote": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AdvanceRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"]
+          },
+          "approvedBy": {
+            "type": "string"
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approvalNote": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Timesheet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Çalıştı", "İzinli", "Devamsız", "Yarım Gün", "Resmi Tatil"]
+          },
+          "checkInTime": {
+            "type": "string",
+            "pattern": "^\\d{2}:\\d{2}$"
+          },
+          "checkOutTime": {
+            "type": "string",
+            "pattern": "^\\d{2}:\\d{2}$"
+          },
+          "totalHoursWorked": {
+            "type": "number"
+          },
+          "overtimeHours": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Payroll": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "periodMonth": {
+            "type": "string",
+            "pattern": "^(0[1-9]|1[0-2])$"
+          },
+          "periodYear": {
+            "type": "string",
+            "pattern": "^\\d{4}$"
+          },
+          "grossSalary": {
+            "type": "number"
+          },
+          "totalDeductions": {
+            "type": "number"
+          },
+          "netSalary": {
+            "type": "number"
+          },
+          "insurancePremiumEmployeeShare": {
+            "type": "number"
+          },
+          "insurancePremiumEmployerShare": {
+            "type": "number"
+          },
+          "taxDeduction": {
+            "type": "number"
+          },
+          "otherAdditions": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["TL", "USD", "EUR"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Ödendi", "Beklemede"]
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SalaryPayment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "payrollId": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["TL", "USD", "EUR"]
+          },
+          "paymentDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": ["Banka Havalesi", "Nakit"]
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Business": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "logoUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -122,19 +502,16 @@
         "type": "object",
         "properties": {
           "error": {
-            "type": "string",
-            "description": "Error type"
+            "type": "string"
           },
           "message": {
-            "type": "string",
-            "description": "Error message"
+            "type": "string"
           },
           "details": {
             "type": "array",
             "items": {
               "type": "object"
-            },
-            "description": "Validation error details"
+            }
           }
         }
       },
@@ -142,16 +519,44 @@
         "type": "object",
         "properties": {
           "message": {
-            "type": "string",
-            "description": "Success message"
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "token": {
+            "type": "string"
+          }
+        }
+      },
+      "PaginatedResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
           },
           "data": {
             "type": "object",
-            "description": "Response data"
-          },
-          "token": {
-            "type": "string",
-            "description": "JWT token (for auth endpoints)"
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "total": {
+                "type": "integer"
+              },
+              "page": {
+                "type": "integer"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "totalPages": {
+                "type": "integer"
+              }
+            }
           }
         }
       }
@@ -162,25 +567,51 @@
       "bearerAuth": []
     }
   ],
-  "tags": [
-    {
-      "name": "Authentication",
-      "description": "User authentication and authorization"
-    },
-    {
-      "name": "Employees",
-      "description": "Employee management operations"
-    },
-    {
-      "name": "System",
-      "description": "System health and status endpoints"
-    }
-  ],
   "paths": {
+    "/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health check endpoint",
+        "description": "Check API and database connectivity status",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "API health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "OK"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "firestore": {
+                      "type": "string"
+                    },
+                    "database": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/register": {
       "post": {
-        "summary": "Register a new user",
         "tags": ["Authentication"],
+        "summary": "Register a new business owner",
+        "description": "Create a new account with business owner role. A business entity is automatically created.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -194,18 +625,19 @@
                     "type": "string",
                     "minLength": 2,
                     "maxLength": 50,
-                    "example": "John Doe"
+                    "example": "Ahmet Yılmaz"
                   },
                   "email": {
                     "type": "string",
                     "format": "email",
-                    "example": "john@example.com"
+                    "example": "ahmet@example.com"
                   },
                   "password": {
                     "type": "string",
                     "minLength": 6,
                     "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)",
-                    "example": "Password123"
+                    "example": "Password123",
+                    "description": "Must contain at least one lowercase, one uppercase letter, and one number"
                   }
                 }
               }
@@ -214,54 +646,40 @@
         },
         "responses": {
           "201": {
-            "description": "User registered successfully",
+            "description": "User and business created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Success"
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
                     },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/User"
-                        }
-                      }
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    },
+                    "business": {
+                      "$ref": "#/components/schemas/Business"
+                    },
+                    "token": {
+                      "type": "string"
                     }
-                  ]
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Validation error or user already exists",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/ValidationError"
           }
         }
       }
     },
     "/auth/login": {
       "post": {
-        "summary": "User login",
         "tags": ["Authentication"],
+        "summary": "User login",
+        "description": "Authenticate user and receive JWT token",
         "security": [],
         "requestBody": {
           "required": true,
@@ -274,7 +692,7 @@
                   "email": {
                     "type": "string",
                     "format": "email",
-                    "example": "john@example.com"
+                    "example": "ahmet@example.com"
                   },
                   "password": {
                     "type": "string",
@@ -291,206 +709,547 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Success"
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
                     },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/User"
-                        },
-                        "token": {
-                          "type": "string",
-                          "description": "JWT authentication token"
-                        }
-                      }
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    },
+                    "token": {
+                      "type": "string"
                     }
-                  ]
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid credentials or validation error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/ValidationError"
           }
         }
       }
     },
     "/auth/me": {
       "get": {
-        "summary": "Get current user information",
         "tags": ["Authentication"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "summary": "Get current user information",
+        "description": "Retrieve authenticated user's profile",
         "responses": {
           "200": {
-            "description": "User information retrieved successfully",
+            "description": "User information retrieved",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Success"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/User"
-                        }
-                      }
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/User"
                     }
-                  ]
+                  }
                 }
               }
             }
           },
           "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/UnauthorizedError"
           },
           "404": {
-            "description": "User not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/NotFoundError"
           }
         }
       }
     },
     "/auth/logout": {
       "post": {
-        "summary": "User logout",
         "tags": ["Authentication"],
+        "summary": "User logout",
+        "description": "Logout user (client should remove token)",
         "security": [],
         "responses": {
           "200": {
-            "description": "Logout successful",
+            "description": "Logout successful"
+          }
+        }
+      }
+    },
+    "/auth/update": {
+      "put": {
+        "tags": ["Authentication"],
+        "summary": "Update current user profile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 50
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["admin", "user"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/auth/register-employee": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register an employee user account",
+        "description": "Create user account for an existing employee (Owner/Manager only)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["employeeId", "email", "password"],
+                "properties": {
+                  "employeeId": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Employee user created successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          }
+        }
+      }
+    },
+    "/employees": {
+      "get": {
+        "tags": ["Employees"],
+        "summary": "Get all employees",
+        "description": "Retrieve all employees for the authenticated owner/manager",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "department",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Employees retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/PaginatedResponse"
                 }
               }
             }
           }
         }
-      }
-    },
-    "/health": {
-      "get": {
-        "summary": "Health check endpoint",
-        "tags": ["System"],
-        "security": [],
-        "responses": {
-          "200": {
-            "description": "API health status",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "example": "OK"
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Personelim API is running"
-                    },
-                    "timestamp": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "firestore": {
-                      "type": "string",
-                      "enum": ["Connected", "Disconnected", "Error"]
-                    },
-                    "database": {
-                      "type": "string",
-                      "example": "Firestore"
-                    },
-                    "error": {
-                      "type": "string",
-                      "description": "Error message if firestore connection fails"
+      },
+      "post": {
+        "tags": ["Employees"],
+        "summary": "Create new employee",
+        "description": "Add a new employee to the system (Owner/Manager only)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["firstName", "lastName"],
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 50
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 50
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "phoneNumber": {
+                    "type": "string"
+                  },
+                  "tcKimlikNo": {
+                    "type": "string",
+                    "minLength": 11,
+                    "maxLength": 11
+                  },
+                  "position": {
+                    "type": "string"
+                  },
+                  "department": {
+                    "type": "string"
+                  },
+                  "contractType": {
+                    "type": "string",
+                    "enum": ["Belirsiz Süreli", "Belirli Süreli", "Kısmi Süreli", "Çağrı Üzerine", "Deneme Süreli"]
+                  },
+                  "workMode": {
+                    "type": "string",
+                    "enum": ["Tam Zamanlı", "Yarı Zamanlı", "Part-time", "Hibrit", "Uzaktan (Remote)"]
+                  },
+                  "workingHoursPerDay": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 24
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "salary": {
+                    "type": "object",
+                    "properties": {
+                      "grossAmount": {
+                        "type": "number"
+                      },
+                      "netAmount": {
+                        "type": "number"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "enum": ["TL", "USD", "EUR"]
+                      }
                     }
                   }
                 }
               }
             }
           }
+        },
+        "responses": {
+          "201": {
+            "description": "Employee created successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/employees/me": {
+      "get": {
+        "tags": ["Employees"],
+        "summary": "Get current employee's own data",
+        "description": "Employee can view their own information",
+        "responses": {
+          "200": {
+            "description": "Employee data retrieved successfully"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Employees"],
+        "summary": "Update current employee's own data",
+        "description": "Employee can update limited fields (phoneNumber, address, profilePictureUrl)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phoneNumber": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "profilePictureUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Employee data updated successfully"
+          }
+        }
+      }
+    },
+    "/employees/me/leaves": {
+      "get": {
+        "tags": ["Employees"],
+        "summary": "Get current employee's leaves",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "approved", "rejected"]
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["günlük", "yıllık", "mazeret"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Leaves retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Employees"],
+        "summary": "Create leave request",
+        "description": "Employee can create their own leave request",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["type", "startDate", "endDate"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["günlük", "yıllık", "mazeret"]
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Leave request created successfully"
+          }
+        }
+      }
+    },
+    "/employees/me/advances": {
+      "get": {
+        "tags": ["Employees"],
+        "summary": "Get current employee's advance requests",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "approved", "rejected"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Advance requests retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Employees"],
+        "summary": "Create advance request",
+        "description": "Employee can create their own advance request",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amount", "reason"],
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Advance request created successfully"
+          }
+        }
+      }
+    },
+    "/employees/statistics": {
+      "get": {
+        "tags": ["Employees"],
+        "summary": "Get employee statistics",
+        "description": "Get statistics about employees (Owner/Manager only)",
+        "responses": {
+          "200": {
+            "description": "Statistics retrieved successfully"
+          }
+        }
+      }
+    },
+    "/employees/deleted": {
+      "get": {
+        "tags": ["Employees"],
+        "summary": "Get deleted employees",
+        "description": "Retrieve soft-deleted employees (Owner/Manager only)",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted employees retrieved successfully"
+          }
         }
       }
     },
     "/employees/contract-types": {
       "get": {
-        "summary": "Get available contract types",
         "tags": ["Employees"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "summary": "Get available contract types",
         "responses": {
           "200": {
-            "description": "Contract types retrieved successfully",
+            "description": "Contract types retrieved",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "message": {
-                      "type": "string",
-                      "example": "Contract types retrieved successfully"
+                      "type": "string"
                     },
                     "contractTypes": {
                       "type": "array",
                       "items": {
                         "type": "string"
-                      },
-                      "example": ["Belirsiz Süreli", "Belirli Süreli", "Kısmi Süreli", "Çağrı Üzerine", "Deneme Süreli"]
+                      }
                     }
                   }
                 }
@@ -502,35 +1261,1667 @@
     },
     "/employees/work-modes": {
       "get": {
-        "summary": "Get available work modes",
         "tags": ["Employees"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "summary": "Get available work modes",
         "responses": {
           "200": {
-            "description": "Work modes retrieved successfully",
+            "description": "Work modes retrieved",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "message": {
-                      "type": "string",
-                      "example": "Work modes retrieved successfully"
+                      "type": "string"
                     },
                     "workModes": {
                       "type": "array",
                       "items": {
                         "type": "string"
-                      },
-                      "example": ["Tam Zamanlı", "Yarı Zamanlı", "Part-time", "Hibrit", "Uzaktan (Remote)"]
+                      }
                     }
                   }
                 }
               }
+            }
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}": {
+      "get": {
+        "tags": ["Employees"],
+        "summary": "Get specific employee",
+        "description": "Retrieve employee by ID (Owner/Manager only)",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Employee retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Employee"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Employees"],
+        "summary": "Update employee",
+        "description": "Update employee information",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Employee"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Employee updated successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Employees"],
+        "summary": "Delete employee",
+        "description": "Soft delete employee",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Employee deleted successfully"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/restore": {
+      "post": {
+        "tags": ["Employees"],
+        "summary": "Restore deleted employee",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Employee restored successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/leaves": {
+      "get": {
+        "tags": ["Leaves"],
+        "summary": "Get employee leaves",
+        "description": "Get all leaves for a specific employee",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "approved",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["günlük", "yıllık", "mazeret"]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "approved", "rejected"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Leaves retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Leaves"],
+        "summary": "Create leave",
+        "description": "Create a new leave record for employee",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["type", "startDate", "endDate"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["günlük", "yıllık", "mazeret"]
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2025-07-15"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2025-07-20"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Leave created successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/leaves/statistics": {
+      "get": {
+        "tags": ["Leaves"],
+        "summary": "Get leave statistics",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Leave statistics retrieved successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/leaves/{leaveId}": {
+      "get": {
+        "tags": ["Leaves"],
+        "summary": "Get specific leave",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "leaveId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Leave retrieved successfully"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Leaves"],
+        "summary": "Update leave",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "leaveId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Leave"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Leave updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Leaves"],
+        "summary": "Delete leave",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "leaveId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Leave deleted successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/leaves/{leaveId}/approve": {
+      "patch": {
+        "tags": ["Leaves"],
+        "summary": "Approve or reject leave",
+        "description": "Owner/Manager can approve or reject leave request",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "leaveId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["approved", "rejected"]
+                  },
+                  "approvalNote": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Leave status updated successfully"
+          }
+        }
+      }
+    },
+    "/advances": {
+      "get": {
+        "tags": ["Advances"],
+        "summary": "Get advance requests",
+        "description": "Get all advance requests (filtered by role)",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "approved", "rejected"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Advance requests retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Advances"],
+        "summary": "Create advance request",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amount", "reason"],
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 5000
+                  },
+                  "reason": {
+                    "type": "string",
+                    "example": "Acil ihtiyaç için"
+                  },
+                  "employeeId": {
+                    "type": "string",
+                    "description": "Required for owner/manager, optional for employee"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Advance request created successfully"
+          }
+        }
+      }
+    },
+    "/advances/{employeeId}/{advanceId}": {
+      "get": {
+        "tags": ["Advances"],
+        "summary": "Get specific advance request",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "advanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Advance request retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Advances"],
+        "summary": "Update advance request",
+        "description": "Only pending requests can be updated",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "advanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Advance request updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Advances"],
+        "summary": "Delete advance request",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "advanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Advance request deleted successfully"
+          }
+        }
+      }
+    },
+    "/advances/{employeeId}/{advanceId}/approve": {
+      "patch": {
+        "tags": ["Advances"],
+        "summary": "Approve advance request",
+        "description": "Owner/Manager can approve request",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "advanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "approvalNote": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Advance request approved successfully"
+          }
+        }
+      }
+    },
+    "/advances/{employeeId}/{advanceId}/reject": {
+      "patch": {
+        "tags": ["Advances"],
+        "summary": "Reject advance request",
+        "description": "Owner/Manager can reject request",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "advanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "approvalNote": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Advance request rejected successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/timesheets": {
+      "get": {
+        "tags": ["Timesheets"],
+        "summary": "Get timesheets",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["Çalıştı", "İzinli", "Devamsız", "Yarım Gün", "Resmi Tatil"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Timesheets retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Timesheets"],
+        "summary": "Create timesheet",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["date"],
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2025-07-15"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["Çalıştı", "İzinli", "Devamsız", "Yarım Gün", "Resmi Tatil"],
+                    "default": "Çalıştı"
+                  },
+                  "checkInTime": {
+                    "type": "string",
+                    "pattern": "^\\d{2}:\\d{2}$",
+                    "example": "09:00"
+                  },
+                  "checkOutTime": {
+                    "type": "string",
+                    "pattern": "^\\d{2}:\\d{2}$",
+                    "example": "17:30"
+                  },
+                  "totalHoursWorked": {
+                    "type": "number",
+                    "example": 8.5
+                  },
+                  "overtimeHours": {
+                    "type": "number",
+                    "example": 0.5
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Timesheet created successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/timesheets/statistics": {
+      "get": {
+        "tags": ["Timesheets"],
+        "summary": "Get timesheet statistics",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Timesheet statistics retrieved successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/timesheets/{timesheetId}": {
+      "get": {
+        "tags": ["Timesheets"],
+        "summary": "Get specific timesheet",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timesheetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Timesheet retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Timesheets"],
+        "summary": "Update timesheet",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timesheetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Timesheet"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Timesheet updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Timesheets"],
+        "summary": "Delete timesheet",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timesheetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Timesheet deleted successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/payrolls": {
+      "get": {
+        "tags": ["Payrolls"],
+        "summary": "Get payrolls",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["Ödendi", "Beklemede"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payrolls retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Payrolls"],
+        "summary": "Create payroll",
+        "description": "Create new payroll record (Owner/Manager only)",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["periodMonth", "periodYear", "grossSalary"],
+                "properties": {
+                  "periodMonth": {
+                    "type": "string",
+                    "pattern": "^(0[1-9]|1[0-2])$",
+                    "example": "07"
+                  },
+                  "periodYear": {
+                    "type": "string",
+                    "pattern": "^\\d{4}$",
+                    "example": "2025"
+                  },
+                  "grossSalary": {
+                    "type": "number",
+                    "example": 15000
+                  },
+                  "totalDeductions": {
+                    "type": "number",
+                    "example": 3000
+                  },
+                  "insurancePremiumEmployeeShare": {
+                    "type": "number",
+                    "example": 1500
+                  },
+                  "insurancePremiumEmployerShare": {
+                    "type": "number",
+                    "example": 2000
+                  },
+                  "taxDeduction": {
+                    "type": "number",
+                    "example": 1500
+                  },
+                  "otherAdditions": {
+                    "type": "number",
+                    "example": 500
+                  },
+                  "currency": {
+                    "type": "string",
+                    "enum": ["TL", "USD", "EUR"],
+                    "default": "TL"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Payroll created successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/payrolls/statistics": {
+      "get": {
+        "tags": ["Payrolls"],
+        "summary": "Get payroll statistics",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payroll statistics retrieved successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/payrolls/{payrollId}": {
+      "get": {
+        "tags": ["Payrolls"],
+        "summary": "Get specific payroll",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "payrollId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payroll retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Payrolls"],
+        "summary": "Update payroll",
+        "description": "Update payroll record (Owner/Manager only)",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "payrollId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Payroll"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payroll updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Payrolls"],
+        "summary": "Delete payroll",
+        "description": "Delete payroll record (Owner/Manager only)",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "payrollId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payroll deleted successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/payrolls/{payrollId}/pay": {
+      "patch": {
+        "tags": ["Payrolls"],
+        "summary": "Mark payroll as paid",
+        "description": "Mark payroll as paid (Owner/Manager only)",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "payrollId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payroll marked as paid successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/salary-payments": {
+      "get": {
+        "tags": ["Salary Payments"],
+        "summary": "Get salary payments",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "paymentMethod",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["Banka Havalesi", "Nakit"]
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Salary payments retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Salary Payments"],
+        "summary": "Create salary payment",
+        "description": "Create new salary payment record (Owner/Manager only)",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amount"],
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "example": 12000
+                  },
+                  "payrollId": {
+                    "type": "string"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "enum": ["TL", "USD", "EUR"],
+                    "default": "TL"
+                  },
+                  "paymentDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "paymentMethod": {
+                    "type": "string",
+                    "enum": ["Banka Havalesi", "Nakit"],
+                    "default": "Banka Havalesi"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Salary payment created successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/salary-payments/statistics": {
+      "get": {
+        "tags": ["Salary Payments"],
+        "summary": "Get salary payment statistics",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Salary payment statistics retrieved successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/salary-payments/by-payroll/{payrollId}": {
+      "get": {
+        "tags": ["Salary Payments"],
+        "summary": "Get salary payments by payroll",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "payrollId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Salary payments retrieved successfully"
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}/salary-payments/{paymentId}": {
+      "get": {
+        "tags": ["Salary Payments"],
+        "summary": "Get specific salary payment",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Salary payment retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Salary Payments"],
+        "summary": "Update salary payment",
+        "description": "Update salary payment record (Owner/Manager only)",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalaryPayment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Salary payment updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Salary Payments"],
+        "summary": "Delete salary payment",
+        "description": "Delete salary payment record (Owner/Manager only)",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Salary payment deleted successfully"
+          }
+        }
+      }
+    },
+    "/business/my": {
+      "get": {
+        "tags": ["Business"],
+        "summary": "Get current user's business",
+        "responses": {
+          "200": {
+            "description": "Business retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Business"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Business"],
+        "summary": "Update current user's business",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100
+                  },
+                  "address": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "logoUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business updated successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/business/{businessId}": {
+      "get": {
+        "tags": ["Business"],
+        "summary": "Get business by ID",
+        "parameters": [
+          {
+            "name": "businessId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Business retrieved successfully"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "ValidationError": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Validation error",
+              "message": "Please check your input data",
+              "details": [
+                {
+                  "field": "email",
+                  "message": "Please provide a valid email"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "UnauthorizedError": {
+        "description": "Authentication required",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Unauthorized",
+              "message": "Authentication required"
+            }
+          }
+        }
+      },
+      "ForbiddenError": {
+        "description": "Access denied",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Forbidden",
+              "message": "You don't have permission to access this resource"
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Not Found",
+              "message": "The requested resource was not found"
             }
           }
         }
