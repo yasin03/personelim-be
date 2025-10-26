@@ -68,7 +68,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Enter your JWT token in the format: Bearer {token}"
+        "description": "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'"
       }
     },
     "schemas": {
@@ -118,16 +118,16 @@
             "type": "string"
           },
           "userId": {
-            "type": "string"
-          },
-          "employeeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Associated user account ID"
           },
           "firstName": {
-            "type": "string"
+            "type": "string",
+            "description": "Employee first name"
           },
           "lastName": {
-            "type": "string"
+            "type": "string",
+            "description": "Employee last name"
           },
           "email": {
             "type": "string",
@@ -157,23 +157,39 @@
           },
           "contractType": {
             "type": "string",
-            "enum": ["Belirsiz Süreli", "Belirli Süreli", "Kısmi Süreli", "Çağrı Üzerine", "Deneme Süreli"]
+            "enum": [
+              "Belirsiz Süreli",
+              "Belirli Süreli",
+              "Kısmi Süreli",
+              "Çağrı Üzerine",
+              "Deneme Süreli"
+            ],
+            "description": "Type of employment contract"
           },
           "workMode": {
             "type": "string",
-            "enum": ["Tam Zamanlı", "Yarı Zamanlı", "Part-time", "Hibrit", "Uzaktan (Remote)"]
+            "enum": [
+              "Tam Zamanlı",
+              "Yarı Zamanlı",
+              "Part-time",
+              "Hibrit",
+              "Uzaktan (Remote)"
+            ],
+            "description": "Work mode"
           },
           "workingHoursPerDay": {
             "type": "number",
-            "default": 8
+            "description": "Working hours per day"
           },
           "startDate": {
             "type": "string",
-            "format": "date"
+            "format": "date",
+            "description": "Employment start date (YYYY-MM-DD)"
           },
           "terminationDate": {
             "type": "string",
-            "format": "date"
+            "format": "date",
+            "description": "Termination date if employee is inactive"
           },
           "salary": {
             "type": "object",
@@ -185,8 +201,7 @@
                 "type": "number"
               },
               "currency": {
-                "type": "string",
-                "enum": ["TL", "USD", "EUR"]
+                "type": "string"
               },
               "bankName": {
                 "type": "string"
@@ -210,283 +225,7 @@
           },
           "isActive": {
             "type": "boolean",
-            "default": true
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Leave": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "employeeId": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": ["günlük", "yıllık", "mazeret"]
-          },
-          "startDate": {
-            "type": "string",
-            "format": "date"
-          },
-          "endDate": {
-            "type": "string",
-            "format": "date"
-          },
-          "totalDays": {
-            "type": "number"
-          },
-          "reason": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": ["pending", "approved", "rejected"]
-          },
-          "approved": {
-            "type": "boolean"
-          },
-          "approvedBy": {
-            "type": "string"
-          },
-          "approvedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "approvalNote": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "AdvanceRequest": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "employeeId": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "number"
-          },
-          "reason": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": ["pending", "approved", "rejected"]
-          },
-          "approvedBy": {
-            "type": "string"
-          },
-          "approvedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "approvalNote": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Timesheet": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "employeeId": {
-            "type": "string"
-          },
-          "date": {
-            "type": "string",
-            "format": "date"
-          },
-          "status": {
-            "type": "string",
-            "enum": ["Çalıştı", "İzinli", "Devamsız", "Yarım Gün", "Resmi Tatil"]
-          },
-          "checkInTime": {
-            "type": "string",
-            "pattern": "^\\d{2}:\\d{2}$"
-          },
-          "checkOutTime": {
-            "type": "string",
-            "pattern": "^\\d{2}:\\d{2}$"
-          },
-          "totalHoursWorked": {
-            "type": "number"
-          },
-          "overtimeHours": {
-            "type": "number"
-          },
-          "notes": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Payroll": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "employeeId": {
-            "type": "string"
-          },
-          "periodMonth": {
-            "type": "string",
-            "pattern": "^(0[1-9]|1[0-2])$"
-          },
-          "periodYear": {
-            "type": "string",
-            "pattern": "^\\d{4}$"
-          },
-          "grossSalary": {
-            "type": "number"
-          },
-          "totalDeductions": {
-            "type": "number"
-          },
-          "netSalary": {
-            "type": "number"
-          },
-          "insurancePremiumEmployeeShare": {
-            "type": "number"
-          },
-          "insurancePremiumEmployerShare": {
-            "type": "number"
-          },
-          "taxDeduction": {
-            "type": "number"
-          },
-          "otherAdditions": {
-            "type": "number"
-          },
-          "currency": {
-            "type": "string",
-            "enum": ["TL", "USD", "EUR"]
-          },
-          "status": {
-            "type": "string",
-            "enum": ["Ödendi", "Beklemede"]
-          },
-          "paidAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "SalaryPayment": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "employeeId": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "number"
-          },
-          "payrollId": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string",
-            "enum": ["TL", "USD", "EUR"]
-          },
-          "paymentDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "paymentMethod": {
-            "type": "string",
-            "enum": ["Banka Havalesi", "Nakit"]
-          },
-          "description": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Business": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "phone": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string",
-            "format": "email"
-          },
-          "logoUrl": {
-            "type": "string",
-            "format": "uri"
-          },
-          "ownerId": {
-            "type": "string"
+            "description": "Whether the employee is active"
           },
           "createdAt": {
             "type": "string",
@@ -947,11 +686,23 @@
                   },
                   "contractType": {
                     "type": "string",
-                    "enum": ["Belirsiz Süreli", "Belirli Süreli", "Kısmi Süreli", "Çağrı Üzerine", "Deneme Süreli"]
+                    "enum": [
+                      "Belirsiz Süreli",
+                      "Belirli Süreli",
+                      "Kısmi Süreli",
+                      "Çağrı Üzerine",
+                      "Deneme Süreli"
+                    ]
                   },
                   "workMode": {
                     "type": "string",
-                    "enum": ["Tam Zamanlı", "Yarı Zamanlı", "Part-time", "Hibrit", "Uzaktan (Remote)"]
+                    "enum": [
+                      "Tam Zamanlı",
+                      "Yarı Zamanlı",
+                      "Part-time",
+                      "Hibrit",
+                      "Uzaktan (Remote)"
+                    ]
                   },
                   "workingHoursPerDay": {
                     "type": "number",
@@ -1249,7 +1000,14 @@
                       "type": "array",
                       "items": {
                         "type": "string"
-                      }
+                      },
+                      "example": [
+                        "Belirsiz Süreli",
+                        "Belirli Süreli",
+                        "Kısmi Süreli",
+                        "Çağrı Üzerine",
+                        "Deneme Süreli"
+                      ]
                     }
                   }
                 }
@@ -1278,7 +1036,14 @@
                       "type": "array",
                       "items": {
                         "type": "string"
-                      }
+                      },
+                      "example": [
+                        "Tam Zamanlı",
+                        "Yarı Zamanlı",
+                        "Part-time",
+                        "Hibrit",
+                        "Uzaktan (Remote)"
+                      ]
                     }
                   }
                 }
@@ -1996,7 +1761,13 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["Çalıştı", "İzinli", "Devamsız", "Yarım Gün", "Resmi Tatil"]
+              "enum": [
+                "Çalıştı",
+                "İzinli",
+                "Devamsız",
+                "Yarım Gün",
+                "Resmi Tatil"
+              ]
             }
           },
           {
@@ -2050,7 +1821,13 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": ["Çalıştı", "İzinli", "Devamsız", "Yarım Gün", "Resmi Tatil"],
+                    "enum": [
+                      "Çalıştı",
+                      "İzinli",
+                      "Devamsız",
+                      "Yarım Gün",
+                      "Resmi Tatil"
+                    ],
                     "default": "Çalıştı"
                   },
                   "checkInTime": {
@@ -2857,72 +2634,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "responses": {
-      "ValidationError": {
-        "description": "Validation error",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            },
-            "example": {
-              "error": "Validation error",
-              "message": "Please check your input data",
-              "details": [
-                {
-                  "field": "email",
-                  "message": "Please provide a valid email"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "UnauthorizedError": {
-        "description": "Authentication required",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            },
-            "example": {
-              "error": "Unauthorized",
-              "message": "Authentication required"
-            }
-          }
-        }
-      },
-      "ForbiddenError": {
-        "description": "Access denied",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            },
-            "example": {
-              "error": "Forbidden",
-              "message": "You don't have permission to access this resource"
-            }
-          }
-        }
-      },
-      "NotFoundError": {
-        "description": "Resource not found",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            },
-            "example": {
-              "error": "Not Found",
-              "message": "The requested resource was not found"
-            }
           }
         }
       }
