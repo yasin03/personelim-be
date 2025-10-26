@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
+const path = require("path");
 require("dotenv").config();
 
 const authRoutes = require("./routes/auth");
@@ -25,6 +26,39 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Content Security Policy to satisfy Vercel restrictions
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'"
+  );
+  next();
+});
+
+// Serve static documentation assets
+app.use(express.static(path.join(__dirname, "public")));
+
+// Serve Redoc bundle from dependency (self-hosted)
+let redocBundlePath;
+try {
+  redocBundlePath = require.resolve("redoc/bundles/redoc.standalone.js");
+} catch (error) {
+  console.error("Redoc bundle could not be resolved:", error);
+}
+
+app.get("/redoc.standalone.js", (req, res) => {
+  if (!redocBundlePath) {
+    return res
+      .status(500)
+      .type("text/plain")
+      .send("Redoc bundle not found. Please ensure 'redoc' is installed.");
+  }
+
+  res.type("application/javascript");
+  res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  res.sendFile(redocBundlePath);
+});
 
 // API Documentation with Redoc
 app.get("/openapi.json", (req, res) => {

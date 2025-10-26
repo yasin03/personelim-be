@@ -29,7 +29,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\""
+        "description": "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'"
       }
     },
     "schemas": {
@@ -76,9 +76,17 @@
             "type": "string",
             "description": "Employee unique identifier"
           },
-          "name": {
+          "userId": {
             "type": "string",
-            "description": "Employee full name"
+            "description": "Associated user account ID"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Employee first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Employee last name"
           },
           "email": {
             "type": "string",
@@ -95,26 +103,83 @@
           },
           "contractType": {
             "type": "string",
-            "enum": ["Belirsiz Süreli", "Belirli Süreli", "Kısmi Süreli", "Çağrı Üzerine", "Deneme Süreli"],
-            "description": "Contract type"
+            "enum": [
+              "Belirsiz Süreli",
+              "Belirli Süreli",
+              "Kısmi Süreli",
+              "Çağrı Üzerine",
+              "Deneme Süreli"
+            ],
+            "description": "Type of employment contract"
           },
           "workMode": {
             "type": "string",
-            "enum": ["Tam Zamanlı", "Yarı Zamanlı", "Part-time", "Hibrit", "Uzaktan (Remote)"],
+            "enum": [
+              "Tam Zamanlı",
+              "Yarı Zamanlı",
+              "Part-time",
+              "Hibrit",
+              "Uzaktan (Remote)"
+            ],
             "description": "Work mode"
           },
-          "salary": {
+          "workingHoursPerDay": {
             "type": "number",
-            "description": "Monthly salary amount"
+            "description": "Working hours per day"
           },
-          "hireDate": {
+          "startDate": {
             "type": "string",
             "format": "date",
-            "description": "Hiring date (YYYY-MM-DD)"
+            "description": "Employment start date (YYYY-MM-DD)"
           },
-          "userId": {
+          "terminationDate": {
             "type": "string",
-            "description": "Associated user account ID"
+            "format": "date",
+            "description": "Termination date if employee is inactive"
+          },
+          "salary": {
+            "type": "object",
+            "properties": {
+              "grossAmount": {
+                "type": "number"
+              },
+              "netAmount": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "bankName": {
+                "type": "string"
+              },
+              "iban": {
+                "type": "string"
+              }
+            }
+          },
+          "insuranceInfo": {
+            "type": "object",
+            "properties": {
+              "sicilNo": {
+                "type": "string"
+              },
+              "startDate": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the employee is active"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -490,7 +555,13 @@
                       "items": {
                         "type": "string"
                       },
-                      "example": ["Belirsiz Süreli", "Belirli Süreli", "Kısmi Süreli", "Çağrı Üzerine", "Deneme Süreli"]
+                      "example": [
+                        "Belirsiz Süreli",
+                        "Belirli Süreli",
+                        "Kısmi Süreli",
+                        "Çağrı Üzerine",
+                        "Deneme Süreli"
+                      ]
                     }
                   }
                 }
@@ -526,7 +597,13 @@
                       "items": {
                         "type": "string"
                       },
-                      "example": ["Tam Zamanlı", "Yarı Zamanlı", "Part-time", "Hibrit", "Uzaktan (Remote)"]
+                      "example": [
+                        "Tam Zamanlı",
+                        "Yarı Zamanlı",
+                        "Part-time",
+                        "Hibrit",
+                        "Uzaktan (Remote)"
+                      ]
                     }
                   }
                 }
