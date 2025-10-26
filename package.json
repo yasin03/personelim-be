@@ -29,7 +29,9 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "redoc": "^2.5.0",
-    "redoc-cli": "^0.13.21"
+    "redoc-cli": "^0.13.21",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
