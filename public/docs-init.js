@@ -59,11 +59,11 @@
       })
       .then(function () {
         if (loadingEl) {
-          loadingEl.style.display = "none";
+          loadingEl.classList.add("is-hidden");
         }
         if (containerEl) {
-          containerEl.hidden = false;
-          containerEl.style.display = "block";
+          containerEl.removeAttribute("hidden");
+          containerEl.classList.add("is-visible");
         }
       })
       .catch(function (error) {
