@@ -16,6 +16,9 @@ body {
   background: #f9fafb;
   text-align: center;
 }
+.loading.is-hidden {
+  display: none;
+}
 .loading-sub {
   font-size: 14px;
   margin-top: 10px;
@@ -23,6 +26,9 @@ body {
 }
 .redoc-container {
   height: 100vh;
+}
+.redoc-container.is-visible {
+  display: block;
 }
 .error {
   color: #b91c1c;
