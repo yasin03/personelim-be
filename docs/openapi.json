@@ -272,30 +272,284 @@
         "type": "object",
         "properties": {
           "message": {
-            "type": "string"
+            "type": "string",
+            "example": "Employees retrieved successfully"
           },
           "data": {
             "type": "object",
             "properties": {
-              "items": {
+              "employees": {
                 "type": "array",
                 "items": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/Employee"
                 }
               },
               "total": {
-                "type": "integer"
+                "type": "integer",
+                "example": 42
               },
               "page": {
-                "type": "integer"
+                "type": "integer",
+                "example": 1
               },
               "limit": {
-                "type": "integer"
+                "type": "integer",
+                "example": 10
               },
               "totalPages": {
-                "type": "integer"
+                "type": "integer",
+                "example": 5
               }
             }
+          }
+        }
+      },
+      "Business": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Business document identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Business name"
+          },
+          "address": {
+            "type": "string",
+            "description": "Business address"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Business phone number"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Business email address"
+          },
+          "logoUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Logo image URL"
+          },
+          "ownerId": {
+            "type": "string",
+            "description": "Owner's UID"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Leave": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "description": "Leave type"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"]
+          },
+          "approved": {
+            "type": "boolean"
+          },
+          "approvedBy": {
+            "type": "string"
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approvalNote": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Timesheet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "description": "Attendance status"
+          },
+          "checkInTime": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "checkOutTime": {
+            "type": "string",
+            "example": "18:00"
+          },
+          "totalHoursWorked": {
+            "type": "number",
+            "format": "float"
+          },
+          "overtimeHours": {
+            "type": "number",
+            "format": "float"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Payroll": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "periodMonth": {
+            "type": "string",
+            "example": "07"
+          },
+          "periodYear": {
+            "type": "string",
+            "example": "2025"
+          },
+          "grossSalary": {
+            "type": "number"
+          },
+          "netSalary": {
+            "type": "number"
+          },
+          "totalDeductions": {
+            "type": "number"
+          },
+          "insurancePremiumEmployeeShare": {
+            "type": "number"
+          },
+          "insurancePremiumEmployerShare": {
+            "type": "number"
+          },
+          "taxDeduction": {
+            "type": "number"
+          },
+          "otherAdditions": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string",
+            "example": "TL"
+          },
+          "payrollDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "example": "Beklemede"
+          },
+          "paymentDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SalaryPayment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "payrollId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string",
+            "example": "TL"
+          },
+          "paymentDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "example": "Banka Havalesi"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }
