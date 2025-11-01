@@ -29,9 +29,20 @@ app.use(express.urlencoded({ extended: true }));
 
 // Content Security Policy to satisfy Vercel restrictions
 app.use((req, res, next) => {
+  const docsSafeList = new Set([
+    "/api-docs",
+    "/docs",
+    "/openapi.json",
+    "/docs.css",
+    "/docs-init.js",
+    "/redoc.standalone.js",
+  ]);
+  const isDocsRequest = docsSafeList.has(req.path);
+  const styleSrc = isDocsRequest ? "'self' 'unsafe-inline'" : "'self'";
+
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'"
+    `default-src 'self'; script-src 'self'; style-src ${styleSrc}; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'`
   );
   next();
 });
