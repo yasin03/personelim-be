@@ -15,8 +15,16 @@ const salaryPaymentRoutes = require("./routes/salaryPayments");
 const { testFirestoreConnection } = require("./utils/firestore");
 
 // Redoc configuration
-const { loadOpenAPISpec, generateRedocHTML } = require("./config/redoc");
+const {
+  loadOpenAPISpec: loadRedocSpec,
+  generateRedocHTML,
+} = require("./config/redoc");
 const { generateSimpleHTML } = require("./config/simple-docs");
+const {
+  swaggerUi,
+  swaggerUIOptions,
+  loadOpenAPISpec: loadSwaggerSpec,
+} = require("./config/swagger");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -73,7 +81,7 @@ app.get("/redoc.standalone.js", (req, res) => {
 
 // API Documentation with Redoc
 app.get("/openapi.json", (req, res) => {
-  const spec = loadOpenAPISpec();
+  const spec = loadRedocSpec();
   if (spec) {
     res.json(spec);
   } else {
@@ -82,7 +90,7 @@ app.get("/openapi.json", (req, res) => {
 });
 
 app.get("/api-docs", (req, res) => {
-  const spec = loadOpenAPISpec();
+  const spec = loadRedocSpec();
   if (spec) {
     const html = generateRedocHTML(spec);
     res.setHeader("Content-Type", "text/html");
@@ -94,7 +102,7 @@ app.get("/api-docs", (req, res) => {
 
 // Simple HTML documentation as fallback
 app.get("/api-docs-simple", (req, res) => {
-  const spec = loadOpenAPISpec();
+  const spec = loadRedocSpec();
   if (spec) {
     const html = generateSimpleHTML(spec);
     res.setHeader("Content-Type", "text/html");
@@ -106,7 +114,7 @@ app.get("/api-docs-simple", (req, res) => {
 
 // Test endpoint to debug
 app.get("/api-docs-debug", (req, res) => {
-  const spec = loadOpenAPISpec();
+  const spec = loadRedocSpec();
   res.json({
     specExists: !!spec,
     specKeys: spec ? Object.keys(spec) : null,
@@ -118,6 +126,18 @@ app.get("/api-docs-debug", (req, res) => {
 app.get("/docs", (req, res) => {
   res.redirect("/api-docs");
 });
+
+// Swagger UI documentation
+const swaggerSpec = loadSwaggerSpec();
+if (swaggerSpec) {
+  app.use(
+    "/swagger",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, swaggerUIOptions)
+  );
+} else {
+  console.warn("Swagger dokümantasyonu yüklenemedi.");
+}
 
 // Routes
 app.use("/auth", authRoutes);
