@@ -165,7 +165,30 @@ router.post("/login", validateLogin, async (req, res) => {
 
     // Get password from database separately
     const userDoc = await db.collection(COLLECTIONS.USERS).doc(user.uid).get();
-    const userPassword = userDoc.data().password;
+    let userPassword = userDoc.exists ? userDoc.data().password : null;
+
+    if (!userPassword) {
+      const passwordDoc = await db
+        .collection(COLLECTIONS.PASSWORDS)
+        .doc(user.uid)
+        .get();
+
+      if (passwordDoc.exists) {
+        userPassword = passwordDoc.data().password;
+      }
+    }
+
+    if (!userPassword) {
+      console.error(
+        "Login error: Password hash missing for user",
+        user.uid,
+        user.email
+      );
+      return res.status(500).json({
+        error: "Login failed",
+        message: "User password is not configured correctly. Please contact support.",
+      });
+    }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, userPassword);
