@@ -3,6 +3,7 @@ const { body, param, query, validationResult } = require("express-validator");
 const router = express.Router({ mergeParams: true });
 const Timesheet = require("../models/Timesheet");
 const { Employee } = require("../models/Employee");
+const Business = require("../models/Business");
 const { authenticateToken, isManagerOrOwner } = require("../middleware/auth");
 
 // Error handling helper
@@ -16,6 +17,111 @@ const handleValidationErrors = (req, res, next) => {
     });
   }
   next();
+};
+
+const stripApprovalFields = (payload) => {
+  if (!payload || typeof payload !== "object") {
+    return;
+  }
+
+  delete payload.approvalStatus;
+  delete payload.approvalNote;
+  delete payload.approvedBy;
+  delete payload.approvedAt;
+};
+
+const buildErrorResponse = (status, error, message) => ({
+  status,
+  body: { error, message },
+});
+
+const resolveTimesheetContext = async (req, employeeId) => {
+  if (!employeeId) {
+    return {
+      errorResponse: buildErrorResponse(
+        400,
+        "Validation Error",
+        "Employee ID is required"
+      ),
+    };
+  }
+
+  if (req.user.role === "employee") {
+    const employee = await Employee.findByUserId(req.user.uid);
+    if (!employee || employee.id !== employeeId) {
+      return {
+        errorResponse: buildErrorResponse(
+          403,
+          "Forbidden",
+          "You can only access your own timesheets"
+        ),
+      };
+    }
+
+    return {
+      ownerUserId: employee.businessOwnerId,
+      employee,
+      actorRole: "employee",
+    };
+  }
+
+  if (req.user.role === "manager") {
+    const businessId = req.user.userData?.businessId;
+    if (!businessId) {
+      return {
+        errorResponse: buildErrorResponse(
+          403,
+          "Forbidden",
+          "Associated business not found for manager user"
+        ),
+      };
+    }
+
+    const business = await Business.findById(businessId);
+    if (!business || !business.ownerId) {
+      return {
+        errorResponse: buildErrorResponse(
+          404,
+          "Not Found",
+          "Business owner could not be determined"
+        ),
+      };
+    }
+
+    const employee = await Employee.findById(business.ownerId, employeeId);
+    if (!employee) {
+      return {
+        errorResponse: buildErrorResponse(
+          404,
+          "Not Found",
+          "Employee not found"
+        ),
+      };
+    }
+
+    return {
+      ownerUserId: business.ownerId,
+      employee,
+      actorRole: "manager",
+    };
+  }
+
+  const employee = await Employee.findById(req.user.uid, employeeId);
+  if (!employee) {
+    return {
+      errorResponse: buildErrorResponse(
+        404,
+        "Not Found",
+        "Employee not found"
+      ),
+    };
+  }
+
+  return {
+    ownerUserId: req.user.uid,
+    employee,
+    actorRole: req.user.role,
+  };
 };
 
 // Create timesheet (Owner/Manager can create for any employee, Employee can create for themselves)
@@ -55,32 +161,13 @@ router.post(
     try {
       const { employeeId } = req.params;
       const timesheetData = req.body;
+      stripApprovalFields(timesheetData);
 
-      // Check if user has permission to create timesheet for this employee
-      let ownerUserId = req.user.uid;
-      let employeeRecord = null;
-
-      if (req.user.role === "employee") {
-        // Employee can only create timesheet for themselves
-        employeeRecord = await Employee.findByUserId(req.user.uid);
-        if (!employeeRecord || employeeRecord.id !== employeeId) {
-          return res.status(403).json({
-            error: "Forbidden",
-            message: "You can only create timesheets for yourself",
-          });
-        }
-        ownerUserId = employeeRecord.businessOwnerId;
-      }
-
-      // Validate employee exists
-      const employee =
-        employeeRecord ||
-        (await Employee.findById(ownerUserId, employeeId));
-      if (!employee) {
-        return res.status(404).json({
-          error: "Not Found",
-          message: "Employee not found",
-        });
+      const context = await resolveTimesheetContext(req, employeeId);
+      if (context.errorResponse) {
+        return res
+          .status(context.errorResponse.status)
+          .json(context.errorResponse.body);
       }
 
       // Validate timesheet data
@@ -88,7 +175,7 @@ router.post(
 
       // Create the timesheet
       const timesheet = await Timesheet.create(
-        ownerUserId,
+        context.ownerUserId,
         employeeId,
         timesheetData
       );
@@ -143,30 +230,11 @@ router.get(
       const { employeeId } = req.params;
       const { month, year, status, page = 1, limit = 10 } = req.query;
 
-      // Check if user has permission to view timesheets for this employee
-      let ownerUserId = req.user.uid;
-      let employeeRecord = null;
-
-      if (req.user.role === "employee") {
-        employeeRecord = await Employee.findByUserId(req.user.uid);
-        if (!employeeRecord || employeeRecord.id !== employeeId) {
-          return res.status(403).json({
-            error: "Forbidden",
-            message: "You can only view your own timesheets",
-          });
-        }
-        ownerUserId = employeeRecord.businessOwnerId;
-      }
-
-      // Validate employee exists
-      const employee =
-        employeeRecord ||
-        (await Employee.findById(ownerUserId, employeeId));
-      if (!employee) {
-        return res.status(404).json({
-          error: "Not Found",
-          message: "Employee not found",
-        });
+      const context = await resolveTimesheetContext(req, employeeId);
+      if (context.errorResponse) {
+        return res
+          .status(context.errorResponse.status)
+          .json(context.errorResponse.body);
       }
 
       const options = {
@@ -178,7 +246,7 @@ router.get(
       };
 
       const result = await Timesheet.findAllByEmployeeId(
-        ownerUserId,
+        context.ownerUserId,
         employeeId,
         options
       );
@@ -217,30 +285,11 @@ router.get(
       const { employeeId } = req.params;
       const { month, year = new Date().getFullYear() } = req.query;
 
-      // Check if user has permission to view statistics for this employee
-      let ownerUserId = req.user.uid;
-      let employeeRecord = null;
-
-      if (req.user.role === "employee") {
-        employeeRecord = await Employee.findByUserId(req.user.uid);
-        if (!employeeRecord || employeeRecord.id !== employeeId) {
-          return res.status(403).json({
-            error: "Forbidden",
-            message: "You can only view your own timesheet statistics",
-          });
-        }
-        ownerUserId = employeeRecord.businessOwnerId;
-      }
-
-      // Validate employee exists
-      const employee =
-        employeeRecord ||
-        (await Employee.findById(ownerUserId, employeeId));
-      if (!employee) {
-        return res.status(404).json({
-          error: "Not Found",
-          message: "Employee not found",
-        });
+      const context = await resolveTimesheetContext(req, employeeId);
+      if (context.errorResponse) {
+        return res
+          .status(context.errorResponse.status)
+          .json(context.errorResponse.body);
       }
 
       const options = {
@@ -249,7 +298,7 @@ router.get(
       };
 
       const stats = await Timesheet.getStatistics(
-        ownerUserId,
+        context.ownerUserId,
         employeeId,
         options
       );
@@ -283,34 +332,15 @@ router.get(
     try {
       const { employeeId, timesheetId } = req.params;
 
-      // Check if user has permission to view this timesheet
-      let ownerUserId = req.user.uid;
-      let employeeRecord = null;
-
-      if (req.user.role === "employee") {
-        employeeRecord = await Employee.findByUserId(req.user.uid);
-        if (!employeeRecord || employeeRecord.id !== employeeId) {
-          return res.status(403).json({
-            error: "Forbidden",
-            message: "You can only view your own timesheets",
-          });
-        }
-        ownerUserId = employeeRecord.businessOwnerId;
-      }
-
-      // Validate employee exists
-      const employee =
-        employeeRecord ||
-        (await Employee.findById(ownerUserId, employeeId));
-      if (!employee) {
-        return res.status(404).json({
-          error: "Not Found",
-          message: "Employee not found",
-        });
+      const context = await resolveTimesheetContext(req, employeeId);
+      if (context.errorResponse) {
+        return res
+          .status(context.errorResponse.status)
+          .json(context.errorResponse.body);
       }
 
       const timesheet = await Timesheet.findById(
-        ownerUserId,
+        context.ownerUserId,
         employeeId,
         timesheetId
       );
@@ -372,36 +402,18 @@ router.put(
     try {
       const { employeeId, timesheetId } = req.params;
       const updateData = req.body;
+      stripApprovalFields(updateData);
 
-      // Check if user has permission to update this timesheet
-      let ownerUserId = req.user.uid;
-      let employeeRecord = null;
-
-      if (req.user.role === "employee") {
-        employeeRecord = await Employee.findByUserId(req.user.uid);
-        if (!employeeRecord || employeeRecord.id !== employeeId) {
-          return res.status(403).json({
-            error: "Forbidden",
-            message: "You can only update your own timesheets",
-          });
-        }
-        ownerUserId = employeeRecord.businessOwnerId;
-      }
-
-      // Validate employee exists
-      const employee =
-        employeeRecord ||
-        (await Employee.findById(ownerUserId, employeeId));
-      if (!employee) {
-        return res.status(404).json({
-          error: "Not Found",
-          message: "Employee not found",
-        });
+      const context = await resolveTimesheetContext(req, employeeId);
+      if (context.errorResponse) {
+        return res
+          .status(context.errorResponse.status)
+          .json(context.errorResponse.body);
       }
 
       // Get current timesheet
       const currentTimesheet = await Timesheet.findById(
-        ownerUserId,
+        context.ownerUserId,
         employeeId,
         timesheetId
       );
@@ -419,7 +431,7 @@ router.put(
 
       // Update the timesheet
       const updatedTimesheet = await Timesheet.updateById(
-        ownerUserId,
+        context.ownerUserId,
         employeeId,
         timesheetId,
         updateData
@@ -456,35 +468,16 @@ router.delete(
     try {
       const { employeeId, timesheetId } = req.params;
 
-      // Check if user has permission to delete this timesheet
-      let ownerUserId = req.user.uid;
-      let employeeRecord = null;
-
-      if (req.user.role === "employee") {
-        employeeRecord = await Employee.findByUserId(req.user.uid);
-        if (!employeeRecord || employeeRecord.id !== employeeId) {
-          return res.status(403).json({
-            error: "Forbidden",
-            message: "You can only delete your own timesheets",
-          });
-        }
-        ownerUserId = employeeRecord.businessOwnerId;
-      }
-
-      // Validate employee exists
-      const employee =
-        employeeRecord ||
-        (await Employee.findById(ownerUserId, employeeId));
-      if (!employee) {
-        return res.status(404).json({
-          error: "Not Found",
-          message: "Employee not found",
-        });
+      const context = await resolveTimesheetContext(req, employeeId);
+      if (context.errorResponse) {
+        return res
+          .status(context.errorResponse.status)
+          .json(context.errorResponse.body);
       }
 
       // Delete the timesheet
       const deletedTimesheet = await Timesheet.deleteById(
-        ownerUserId,
+        context.ownerUserId,
         employeeId,
         timesheetId
       );
@@ -506,6 +499,63 @@ router.delete(
       res.status(500).json({
         error: "Internal Server Error",
         message: error.message || "Failed to delete timesheet",
+      });
+    }
+  }
+);
+
+// Approve or reject timesheet (only for owner/manager)
+router.patch(
+  "/:timesheetId/approve",
+  authenticateToken,
+  isManagerOrOwner,
+  [
+    param("employeeId").isString().withMessage("Employee ID must be a string"),
+    param("timesheetId").isString().withMessage("Timesheet ID must be a string"),
+    body("status")
+      .isIn(Timesheet.getApprovalStatuses())
+      .withMessage(
+        `Status must be one of: ${Timesheet.getApprovalStatuses().join(", ")}`
+      ),
+    body("note")
+      .optional()
+      .isString()
+      .isLength({ max: 1000 })
+      .withMessage("Note must be a string up to 1000 characters"),
+  ],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { employeeId, timesheetId } = req.params;
+      const { status, note } = req.body;
+
+      const context = await resolveTimesheetContext(req, employeeId);
+      if (context.errorResponse) {
+        return res
+          .status(context.errorResponse.status)
+          .json(context.errorResponse.body);
+      }
+
+      const updatedTimesheet = await Timesheet.updateApprovalStatus(
+        context.ownerUserId,
+        employeeId,
+        timesheetId,
+        {
+          approvalStatus: status,
+          approvalNote: note,
+          reviewerId: req.user.uid,
+        }
+      );
+
+      res.status(200).json({
+        message: "Timesheet approval status updated successfully",
+        data: updatedTimesheet,
+      });
+    } catch (error) {
+      console.error("Error approving timesheet:", error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: error.message || "Failed to update timesheet approval status",
       });
     }
   }

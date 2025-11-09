@@ -1,5 +1,7 @@
 const { db, COLLECTIONS } = require("../config/firebase");
 
+const APPROVAL_STATUS_VALUES = ["pending", "approved", "rejected"];
+
 class Timesheet {
   constructor(data) {
     this.employeeId = data.employeeId; // Personele referans
@@ -11,6 +13,10 @@ class Timesheet {
     this.totalHoursWorked = data.totalHoursWorked || 0;
     this.overtimeHours = data.overtimeHours || 0;
     this.notes = data.notes || null;
+    this.approvalStatus = data.approvalStatus || "pending";
+    this.approvalNote = data.approvalNote || null;
+    this.approvedBy = data.approvedBy || null;
+    this.approvedAt = data.approvedAt || null;
     this.createdAt = data.createdAt || new Date().toISOString();
     this.updatedAt = data.updatedAt || new Date().toISOString();
   }
@@ -57,6 +63,10 @@ class Timesheet {
         totalHoursWorked: timesheet.totalHoursWorked,
         overtimeHours: timesheet.overtimeHours,
         notes: timesheet.notes,
+        approvalStatus: timesheet.approvalStatus,
+        approvalNote: timesheet.approvalNote,
+        approvedBy: timesheet.approvedBy,
+        approvedAt: timesheet.approvedAt,
         createdAt: timesheet.createdAt,
         updatedAt: timesheet.updatedAt,
       });
@@ -171,6 +181,19 @@ class Timesheet {
         ...updateData,
         updatedAt: new Date().toISOString(),
       };
+
+      if (updateFields.approvalStatus) {
+        if (!APPROVAL_STATUS_VALUES.includes(updateFields.approvalStatus)) {
+          throw new Error(
+            `Approval status must be one of: ${APPROVAL_STATUS_VALUES.join(", ")}`
+          );
+        }
+
+        if (updateFields.approvalStatus === "pending") {
+          updateFields.approvedBy = null;
+          updateFields.approvedAt = null;
+        }
+      }
 
       // Recalculate total hours if check-in or check-out time is updated
       if (updateFields.checkInTime || updateFields.checkOutTime) {
@@ -308,6 +331,50 @@ class Timesheet {
     } catch (error) {
       throw new Error(`Failed to get timesheet statistics: ${error.message}`);
     }
+  }
+
+  // Update approval status for a timesheet
+  static async updateApprovalStatus(userId, employeeId, timesheetId, data) {
+    try {
+      const { approvalStatus, approvalNote, reviewerId } = data;
+
+      if (!APPROVAL_STATUS_VALUES.includes(approvalStatus)) {
+        throw new Error(
+          `Approval status must be one of: ${APPROVAL_STATUS_VALUES.join(", ")}`
+        );
+      }
+
+      const updateFields = {
+        approvalStatus,
+        approvalNote: approvalNote || null,
+        approvedBy:
+          approvalStatus === "approved" ? reviewerId : approvalStatus === "rejected" ? reviewerId : null,
+        approvedAt:
+          approvalStatus === "pending"
+            ? null
+            : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await this.getTimesheetsCollection(userId, employeeId)
+        .doc(timesheetId)
+        .update(updateFields);
+
+      const updatedDoc = await this.getTimesheetsCollection(userId, employeeId)
+        .doc(timesheetId)
+        .get();
+
+      return {
+        id: updatedDoc.id,
+        ...updatedDoc.data(),
+      };
+    } catch (error) {
+      throw new Error(`Failed to update approval status: ${error.message}`);
+    }
+  }
+
+  static getApprovalStatuses() {
+    return [...APPROVAL_STATUS_VALUES];
   }
 
   // Calculate hours worked between check-in and check-out times

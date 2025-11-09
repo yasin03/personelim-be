@@ -22,7 +22,24 @@ Personelim API hâlihazırda kapsamlı bir personel yönetim altyapısı sağlı
 2. Token’ı `httpOnly` çerez veya secure storage’ta tut.
 3. Tüm korumalı isteklere `Authorization: Bearer <token>` ekle.
 4. Refresh akışı yok; token süresi dolarsa kullanıcıyı yeniden login ekranına yönlendir.
-5. Rol bazlı erişim (`owner`, `admin`, `user`) kontrolünü frontend’de de yap (örn. menü gizleme).
+5. Rol bazlı erişim (`owner`, `manager`, `employee`) kontrolünü frontend’de de yap (örn. menü gizleme).
+
+### 3.1 Rol Yetkileri ve Kullanım Senaryoları
+- **owner** (varsayılan işletme sahibi)
+  - İlk kayıtlı kullanıcı, işletme verilerinin ana sahibi.
+  - İşletme bilgilerini, tüm çalışanları ve maaş/mesai verilerini yönetebilir.
+  - Gerekirse yeni manager hesapları oluşturacak; çalışanları silme/restore etme yetkisi var.
+- **manager**
+  - Owner veya admin tarafından yetkilendirilen ikinci seviye yönetici.
+  - Çalışan CRUD, timesheet, payroll, leave gibi operasyonların çoğunu owner adına yapabilir.
+  - İşletme ayarlarını değiştiremez; kullanıcı rolleri üzerinde sınırlı yetki.
+  - Managers hesap oluşturma şu anda backend’de hazır bir endpoint’e bağlı değil; owner Frontend’den çalışanı seçip manager rolüne yükseltecek akışı planlamalı (bkz. [Manager Hesabı Oluşturma](#manager-hesab%C4%B1-olu%C5%9Fturma)).
+- **employee**
+  - Kendi hesaplarıyla giriş yapar; yalnızca kendisine ait mesai, izin, maaş bilgilerini görüntüler.
+  - `/employees/:employeeId/timesheets` üzerinden sadece kendi ID’sini kullanabilir; backend bu kontrolü doğruluyor.
+  - Çalışan Self-service aksiyonları: Mesai ekleme/düzenleme, belirli iletişim bilgilerini güncelleme.
+
+> Not: Eski dokümantasyonda **admin** ve **user** rollerinden bahsediyor; backend tarafında hâlâ kullanımda olabilir ama ana akış owner/manager/employee üçlüsü üzerinden kurgulanmalı. UI’de bu roller dışındaki seçenekleri gizle.
 
 ### 4. Modüler Sayfa / Bileşen Planı
 - **Auth Sayfaları:** Login, Register, Forgot Password (Swagger’daki `auth` endpoint’lerine göre).
@@ -88,6 +105,14 @@ export function useEmployees(params) {
 - Menü öğelerini role göre filtrele (örn. `owner` tüm sekmeler, `user` sadece kendi timesheet’i).
 - Route guard: Örn. Next.js’de `middleware` veya `getServerSideProps` içinde token doğrulaması.
 
+### 7.1 Manager Hesabı Oluşturma
+- Backend’de `POST /auth/register-employee` endpoint’i çalışanlara login hesabı açmak için var; manager rolü için doğrudan endpoint yok.
+- Önerilen senaryo:
+  1. Owner, yeni yöneticiyi önce normal çalışan olarak ekler (`POST /employees`).
+  2. Çalışanın `employeeId`’si alındıktan sonra, owner `POST /auth/register-employee` ile hesap açar.
+  3. Ardından owner, `PUT /auth/update` veya özel bir yönetici rol güncelleme endpoint’i üzerinden rolü `manager` olarak günceller (gerekirse backend’e `PUT /auth/users/:uid/role` gibi bir uç eklenmeli).
+- FE’de owner paneline “Manager olarak yetkilendir” aksiyonu ekleyip rol değişimini tetikleyen API çağrısını yap.
+
 ### 8. SSR / SEO Notları (Next.js için)
 - Kimlik doğrulama gerektiren sayfalarda `getServerSideProps` içinde token’ı doğrula; geçersizse login’e yönlendir.
 - Ana sayfa, login vb. herkese açık sayfalarda `getStaticProps` + revalidate.
@@ -98,6 +123,22 @@ export function useEmployees(params) {
 - Büyük listelerde sanal listeleme (`react-window`).
 - `React.lazy` + `Suspense` ile modülleri lazy load (örn. grafikli dashboard).
 - Form bileşenlerini küçük parçalar halinde tut (örn. `EmployeeForm`, `PayrollForm`).
+
+### 9.1 Timesheet Güvenirliği
+- Çalışanların kendi kayıtlarını girmesi güvenlik açısından sorgulanabilir; FE/bE birlikte düşünmeli:
+  - Backend tarafında her çalışan kaydı sadece kendi `employeeId`’sine bağlı timesheet oluşturabilir (şu an bu kontrol var).
+  - Owner/manager onay akışı gerekiyorsa `timesheets` koleksiyonuna `approved`, `approvedBy`, `approvedAt` alanları ekleyip ekranda onay süreci tasarlanabilir.
+  - FE, mesai formunu gönderirken backend’de saat hesabının yapılmasına izin verir; çalışan sadece zamanları girer.
+  - Otomatik hesap: Backend `Timesheet.create` içinde check-in/out verildiğinde `totalHoursWorked`’ü hesaplıyor. FE’de hesaplanıp gönderilse bile backend doğrulaması esas olmalı (manipülasyonu önler).
+  - Mola süreleri: Şu an modelde explicit mola alanı yok. Mola desteği istiyorsan `breaks` veya `breakMinutes` alanı ekleyip backend’de net çalışma süresini (total - breaks) hesaplat. FE bu alanı isteğe bağlı doldurabilir; nihai hesap backend’e bırakılmalı.
+
+### 9.2 Timesheet Form İpuçları
+- Form alanları:
+  - `date` (Zorunlu) → `YYYY-MM-DD`
+  - `checkInTime`, `checkOutTime` (Opsiyonel; girilirse backend süreyi hesaplar)
+  - `status`, `notes`, `overtimeHours`
+  - Opsiyonel mola alanı (eklenirse backend’e send)
+- FE tarafında tarih seçici + saat seçici kullan; hatalı formatları backend’e göndermeden önce yakala.
 
 ### 10. Geliştirme Süreci Önerisi
 1. Auth flow (login/register) → token yönetimi.
