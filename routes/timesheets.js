@@ -57,19 +57,25 @@ router.post(
       const timesheetData = req.body;
 
       // Check if user has permission to create timesheet for this employee
+      let ownerUserId = req.user.uid;
+      let employeeRecord = null;
+
       if (req.user.role === "employee") {
         // Employee can only create timesheet for themselves
-        const employee = await Employee.findByUserId(req.user.uid);
-        if (!employee || employee.id !== employeeId) {
+        employeeRecord = await Employee.findByUserId(req.user.uid);
+        if (!employeeRecord || employeeRecord.id !== employeeId) {
           return res.status(403).json({
             error: "Forbidden",
             message: "You can only create timesheets for yourself",
           });
         }
+        ownerUserId = employeeRecord.businessOwnerId;
       }
 
       // Validate employee exists
-      const employee = await Employee.findById(req.user.uid, employeeId);
+      const employee =
+        employeeRecord ||
+        (await Employee.findById(ownerUserId, employeeId));
       if (!employee) {
         return res.status(404).json({
           error: "Not Found",
@@ -82,7 +88,7 @@ router.post(
 
       // Create the timesheet
       const timesheet = await Timesheet.create(
-        req.user.uid,
+        ownerUserId,
         employeeId,
         timesheetData
       );
@@ -138,18 +144,24 @@ router.get(
       const { month, year, status, page = 1, limit = 10 } = req.query;
 
       // Check if user has permission to view timesheets for this employee
+      let ownerUserId = req.user.uid;
+      let employeeRecord = null;
+
       if (req.user.role === "employee") {
-        const employee = await Employee.findByUserId(req.user.uid);
-        if (!employee || employee.id !== employeeId) {
+        employeeRecord = await Employee.findByUserId(req.user.uid);
+        if (!employeeRecord || employeeRecord.id !== employeeId) {
           return res.status(403).json({
             error: "Forbidden",
             message: "You can only view your own timesheets",
           });
         }
+        ownerUserId = employeeRecord.businessOwnerId;
       }
 
       // Validate employee exists
-      const employee = await Employee.findById(req.user.uid, employeeId);
+      const employee =
+        employeeRecord ||
+        (await Employee.findById(ownerUserId, employeeId));
       if (!employee) {
         return res.status(404).json({
           error: "Not Found",
@@ -166,7 +178,7 @@ router.get(
       };
 
       const result = await Timesheet.findAllByEmployeeId(
-        req.user.uid,
+        ownerUserId,
         employeeId,
         options
       );
@@ -206,18 +218,24 @@ router.get(
       const { month, year = new Date().getFullYear() } = req.query;
 
       // Check if user has permission to view statistics for this employee
+      let ownerUserId = req.user.uid;
+      let employeeRecord = null;
+
       if (req.user.role === "employee") {
-        const employee = await Employee.findByUserId(req.user.uid);
-        if (!employee || employee.id !== employeeId) {
+        employeeRecord = await Employee.findByUserId(req.user.uid);
+        if (!employeeRecord || employeeRecord.id !== employeeId) {
           return res.status(403).json({
             error: "Forbidden",
             message: "You can only view your own timesheet statistics",
           });
         }
+        ownerUserId = employeeRecord.businessOwnerId;
       }
 
       // Validate employee exists
-      const employee = await Employee.findById(req.user.uid, employeeId);
+      const employee =
+        employeeRecord ||
+        (await Employee.findById(ownerUserId, employeeId));
       if (!employee) {
         return res.status(404).json({
           error: "Not Found",
@@ -231,7 +249,7 @@ router.get(
       };
 
       const stats = await Timesheet.getStatistics(
-        req.user.uid,
+        ownerUserId,
         employeeId,
         options
       );
@@ -266,18 +284,24 @@ router.get(
       const { employeeId, timesheetId } = req.params;
 
       // Check if user has permission to view this timesheet
+      let ownerUserId = req.user.uid;
+      let employeeRecord = null;
+
       if (req.user.role === "employee") {
-        const employee = await Employee.findByUserId(req.user.uid);
-        if (!employee || employee.id !== employeeId) {
+        employeeRecord = await Employee.findByUserId(req.user.uid);
+        if (!employeeRecord || employeeRecord.id !== employeeId) {
           return res.status(403).json({
             error: "Forbidden",
             message: "You can only view your own timesheets",
           });
         }
+        ownerUserId = employeeRecord.businessOwnerId;
       }
 
       // Validate employee exists
-      const employee = await Employee.findById(req.user.uid, employeeId);
+      const employee =
+        employeeRecord ||
+        (await Employee.findById(ownerUserId, employeeId));
       if (!employee) {
         return res.status(404).json({
           error: "Not Found",
@@ -286,7 +310,7 @@ router.get(
       }
 
       const timesheet = await Timesheet.findById(
-        req.user.uid,
+        ownerUserId,
         employeeId,
         timesheetId
       );
@@ -350,18 +374,24 @@ router.put(
       const updateData = req.body;
 
       // Check if user has permission to update this timesheet
+      let ownerUserId = req.user.uid;
+      let employeeRecord = null;
+
       if (req.user.role === "employee") {
-        const employee = await Employee.findByUserId(req.user.uid);
-        if (!employee || employee.id !== employeeId) {
+        employeeRecord = await Employee.findByUserId(req.user.uid);
+        if (!employeeRecord || employeeRecord.id !== employeeId) {
           return res.status(403).json({
             error: "Forbidden",
             message: "You can only update your own timesheets",
           });
         }
+        ownerUserId = employeeRecord.businessOwnerId;
       }
 
       // Validate employee exists
-      const employee = await Employee.findById(req.user.uid, employeeId);
+      const employee =
+        employeeRecord ||
+        (await Employee.findById(ownerUserId, employeeId));
       if (!employee) {
         return res.status(404).json({
           error: "Not Found",
@@ -371,7 +401,7 @@ router.put(
 
       // Get current timesheet
       const currentTimesheet = await Timesheet.findById(
-        req.user.uid,
+        ownerUserId,
         employeeId,
         timesheetId
       );
@@ -389,7 +419,7 @@ router.put(
 
       // Update the timesheet
       const updatedTimesheet = await Timesheet.updateById(
-        req.user.uid,
+        ownerUserId,
         employeeId,
         timesheetId,
         updateData
@@ -427,18 +457,24 @@ router.delete(
       const { employeeId, timesheetId } = req.params;
 
       // Check if user has permission to delete this timesheet
+      let ownerUserId = req.user.uid;
+      let employeeRecord = null;
+
       if (req.user.role === "employee") {
-        const employee = await Employee.findByUserId(req.user.uid);
-        if (!employee || employee.id !== employeeId) {
+        employeeRecord = await Employee.findByUserId(req.user.uid);
+        if (!employeeRecord || employeeRecord.id !== employeeId) {
           return res.status(403).json({
             error: "Forbidden",
             message: "You can only delete your own timesheets",
           });
         }
+        ownerUserId = employeeRecord.businessOwnerId;
       }
 
       // Validate employee exists
-      const employee = await Employee.findById(req.user.uid, employeeId);
+      const employee =
+        employeeRecord ||
+        (await Employee.findById(ownerUserId, employeeId));
       if (!employee) {
         return res.status(404).json({
           error: "Not Found",
@@ -448,7 +484,7 @@ router.delete(
 
       // Delete the timesheet
       const deletedTimesheet = await Timesheet.deleteById(
-        req.user.uid,
+        ownerUserId,
         employeeId,
         timesheetId
       );
