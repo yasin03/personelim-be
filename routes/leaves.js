@@ -339,46 +339,77 @@ router.get(
         ownerUserId = req.user.uid;
       }
 
+      if (!ownerUserId) {
+        return res.status(500).json({
+          error: "Internal Server Error",
+          message: "Owner user ID could not be determined",
+        });
+      }
+
       // Get all employees
       const employeesResult = await Employee.findAllByUserId(ownerUserId);
-      const employees = employeesResult.employees || employeesResult;
+      const employees = Array.isArray(employeesResult) 
+        ? employeesResult 
+        : (employeesResult.employees || []);
+
+      if (!Array.isArray(employees) || employees.length === 0) {
+        return res.status(200).json({
+          message: "Pending leaves retrieved successfully",
+          data: {
+            leaves: [],
+            total: 0,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: 0,
+          },
+        });
+      }
 
       const allPendingLeaves = [];
 
       // Get pending leaves for each employee
       for (const employee of employees) {
-        const options = {
-          status: "pending",
-        };
-        const result = await Leave.findAllByEmployeeId(
-          ownerUserId,
-          employee.id,
-          options
-        );
+        try {
+          const options = {
+            status: "pending",
+          };
+          const result = await Leave.findAllByEmployeeId(
+            ownerUserId,
+            employee.id,
+            options
+          );
 
-        const leaves = result.leaves || result;
-        const leavesWithEmployeeInfo = leaves.map((leave) => ({
-          ...leave,
-          employee: {
-            id: employee.id,
-            firstName: employee.firstName,
-            lastName: employee.lastName,
-            name: `${employee.firstName} ${employee.lastName}`,
-            email: employee.email,
-            department: employee.department,
-            position: employee.position,
-          },
-        }));
+          const leaves = Array.isArray(result) 
+            ? result 
+            : (result.leaves || []);
+          
+          if (Array.isArray(leaves) && leaves.length > 0) {
+            const leavesWithEmployeeInfo = leaves.map((leave) => ({
+              ...leave,
+              employee: {
+                id: employee.id,
+                firstName: employee.firstName || "",
+                lastName: employee.lastName || "",
+                name: `${employee.firstName || ""} ${employee.lastName || ""}`.trim() || "Unknown",
+                email: employee.email || null,
+                department: employee.department || null,
+                position: employee.position || null,
+              },
+            }));
 
-        allPendingLeaves.push(...leavesWithEmployeeInfo);
+            allPendingLeaves.push(...leavesWithEmployeeInfo);
+          }
+        } catch (error) {
+          // Log error but continue with other employees
+          console.error(`Error getting leaves for employee ${employee.id}:`, error);
+        }
       }
 
       // Filter expired leaves if needed
       const includeExpiredBool = includeExpired === "true" || includeExpired === true;
-      const filteredLeaves = Leave.filterExpiredLeaves(
-        allPendingLeaves,
-        includeExpiredBool
-      );
+      const filteredLeaves = Array.isArray(allPendingLeaves) && allPendingLeaves.length > 0
+        ? Leave.filterExpiredLeaves(allPendingLeaves, includeExpiredBool)
+        : [];
 
       // Sort by creation date (newest first)
       filteredLeaves.sort(
@@ -402,9 +433,11 @@ router.get(
       });
     } catch (error) {
       console.error("Error getting pending leaves:", error);
+      console.error("Error stack:", error.stack);
       res.status(500).json({
         error: "Internal Server Error",
         message: error.message || "Failed to get pending leaves",
+        details: process.env.NODE_ENV === "development" ? error.stack : undefined,
       });
     }
   }
