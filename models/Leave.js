@@ -1,5 +1,7 @@
 const { db, COLLECTIONS } = require("../config/firebase");
 
+const APPROVAL_STATUS_VALUES = ["pending", "approved", "rejected"];
+
 class Leave {
   constructor(data) {
     this.employeeId = data.employeeId; // Hangi personele ait
@@ -172,7 +174,7 @@ class Leave {
     }
   }
 
-  // Approve or reject leave
+  // Approve or reject leave (deprecated, use updateApprovalStatus instead)
   static async updateStatus(
     userId,
     employeeId,
@@ -214,6 +216,53 @@ class Leave {
     } catch (error) {
       throw new Error(`Failed to update leave status: ${error.message}`);
     }
+  }
+
+  // Update approval status for a leave (similar to Timesheet)
+  static async updateApprovalStatus(userId, employeeId, leaveId, data) {
+    try {
+      const { approvalStatus, approvalNote, reviewerId } = data;
+
+      if (!APPROVAL_STATUS_VALUES.includes(approvalStatus)) {
+        throw new Error(
+          `Approval status must be one of: ${APPROVAL_STATUS_VALUES.join(", ")}`
+        );
+      }
+
+      const updateFields = {
+        status: approvalStatus,
+        approved: approvalStatus === "approved",
+        approvalNote: approvalNote || null,
+        approvedBy:
+          approvalStatus === "approved" || approvalStatus === "rejected"
+            ? reviewerId
+            : null,
+        approvedAt:
+          approvalStatus === "pending"
+            ? null
+            : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await this.getLeavesCollection(userId, employeeId)
+        .doc(leaveId)
+        .update(updateFields);
+
+      const updatedDoc = await this.getLeavesCollection(userId, employeeId)
+        .doc(leaveId)
+        .get();
+
+      return {
+        id: updatedDoc.id,
+        ...updatedDoc.data(),
+      };
+    } catch (error) {
+      throw new Error(`Failed to update approval status: ${error.message}`);
+    }
+  }
+
+  static getApprovalStatuses() {
+    return [...APPROVAL_STATUS_VALUES];
   }
 
   // Approve leave (deprecated, use updateStatus instead)
@@ -378,6 +427,29 @@ class Leave {
     }
 
     return true;
+  }
+
+  // Check if leave start date has passed (expired)
+  static isExpired(startDate) {
+    const start = new Date(startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return start < today;
+  }
+
+  // Filter out expired leaves from results
+  static filterExpiredLeaves(leaves, includeExpired = false) {
+    if (includeExpired) {
+      return leaves;
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return leaves.filter((leave) => {
+      const startDate = new Date(leave.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      // Only filter out expired pending leaves
+      return !(leave.status === "pending" && startDate < today);
+    });
   }
 }
 

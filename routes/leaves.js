@@ -2,9 +2,106 @@ const express = require("express");
 const { body, validationResult, param } = require("express-validator");
 const Leave = require("../models/Leave");
 const { Employee } = require("../models/Employee");
+const Business = require("../models/Business");
 const { authenticateToken, isManagerOrOwner } = require("../middleware/auth");
 
 const router = express.Router({ mergeParams: true }); // mergeParams to access employeeId from parent route
+
+// Helper function to build error response
+const buildErrorResponse = (status, error, message) => ({
+  status,
+  body: { error, message },
+});
+
+// Helper function to resolve leave context (similar to timesheet)
+const resolveLeaveContext = async (req, employeeId) => {
+  if (!employeeId) {
+    return {
+      errorResponse: buildErrorResponse(
+        400,
+        "Validation Error",
+        "Employee ID is required"
+      ),
+    };
+  }
+
+  if (req.user.role === "employee") {
+    const employee = await Employee.findByUserId(req.user.uid);
+    if (!employee || employee.id !== employeeId) {
+      return {
+        errorResponse: buildErrorResponse(
+          403,
+          "Forbidden",
+          "You can only access your own leaves"
+        ),
+      };
+    }
+
+    return {
+      ownerUserId: employee.businessOwnerId,
+      employee,
+      actorRole: "employee",
+    };
+  }
+
+  if (req.user.role === "manager") {
+    const businessId = req.user.userData?.businessId;
+    if (!businessId) {
+      return {
+        errorResponse: buildErrorResponse(
+          403,
+          "Forbidden",
+          "Associated business not found for manager user"
+        ),
+      };
+    }
+
+    const business = await Business.findById(businessId);
+    if (!business || !business.ownerId) {
+      return {
+        errorResponse: buildErrorResponse(
+          404,
+          "Not Found",
+          "Business owner could not be determined"
+        ),
+      };
+    }
+
+    const employee = await Employee.findById(business.ownerId, employeeId);
+    if (!employee) {
+      return {
+        errorResponse: buildErrorResponse(
+          404,
+          "Not Found",
+          "Employee not found"
+        ),
+      };
+    }
+
+    return {
+      ownerUserId: business.ownerId,
+      employee,
+      actorRole: "manager",
+    };
+  }
+
+  const employee = await Employee.findById(req.user.uid, employeeId);
+  if (!employee) {
+    return {
+      errorResponse: buildErrorResponse(
+        404,
+        "Not Found",
+        "Employee not found"
+      ),
+    };
+  }
+
+  return {
+    ownerUserId: req.user.uid,
+    employee,
+    actorRole: req.user.role,
+  };
+};
 
 // Validation middleware
 const validateLeave = [
@@ -172,6 +269,15 @@ router.get(
         options
       );
 
+      // Filter out expired pending leaves by default (unless includeExpired=true)
+      const includeExpired = req.query.includeExpired === "true";
+      if (result.leaves) {
+        result.leaves = Leave.filterExpiredLeaves(result.leaves, includeExpired);
+        result.total = result.leaves.length;
+      } else if (Array.isArray(result)) {
+        result = Leave.filterExpiredLeaves(result, includeExpired);
+      }
+
       res.status(200).json({
         message: "Leaves retrieved successfully",
         data: result,
@@ -291,6 +397,17 @@ router.put(
         });
       }
 
+      // Owner/Manager can update any leave, but if they update a non-pending leave,
+      // it should reset to pending status unless they explicitly approve it
+      if (["owner", "manager"].includes(req.user.role) && existingLeave.status !== "pending") {
+        // If owner/manager is updating an approved/rejected leave, reset to pending
+        updateData.status = "pending";
+        updateData.approved = false;
+        updateData.approvedBy = null;
+        updateData.approvedAt = null;
+        updateData.approvalNote = null;
+      }
+
       // Validate dates
       try {
         Leave.validateDates(updateData.startDate, updateData.endDate);
@@ -322,64 +439,198 @@ router.put(
   }
 );
 
-// PATCH /employees/:employeeId/leaves/:leaveId/approve - Approve or reject leave (only for manager/owner)
+// PATCH /employees/:employeeId/leaves/:leaveId/approve - Approve, reject, or reset leave (only for manager/owner)
 router.patch(
   "/:leaveId/approve",
   authenticateToken,
   isManagerOrOwner,
-  validateEmployeeId,
-  validateLeaveId,
   [
+    param("employeeId").isString().withMessage("Employee ID must be a string"),
+    param("leaveId").isString().withMessage("Leave ID must be a string"),
     body("status")
-      .isIn(["approved", "rejected"])
-      .withMessage("Status must be either approved or rejected"),
-    body("approvalNote")
+      .isIn(Leave.getApprovalStatuses())
+      .withMessage(
+        `Status must be one of: ${Leave.getApprovalStatuses().join(", ")}`
+      ),
+    body("note")
       .optional()
-      .trim()
-      .isLength({ max: 500 })
-      .withMessage("Approval note must not exceed 500 characters"),
+      .isString()
+      .isLength({ max: 1000 })
+      .withMessage("Note must be a string up to 1000 characters"),
   ],
   handleValidationErrors,
-  verifyEmployeeOwnership,
   async (req, res) => {
     try {
       const { employeeId, leaveId } = req.params;
-      const businessOwnerId = req.businessOwnerId;
-      const { status, approvalNote } = req.body;
-      const approvedBy = req.user.uid;
+      const { status, note } = req.body;
+
+      const context = await resolveLeaveContext(req, employeeId);
+      if (context.errorResponse) {
+        return res
+          .status(context.errorResponse.status)
+          .json(context.errorResponse.body);
+      }
 
       // Check if leave exists
       const existingLeave = await Leave.findById(
-        businessOwnerId,
+        context.ownerUserId,
         employeeId,
         leaveId
       );
       if (!existingLeave) {
         return res.status(404).json({
-          error: "Leave not found",
-          message: "Leave record not found",
+          error: "Not Found",
+          message: "Leave not found",
         });
       }
 
-      // Update leave status
-      const updatedLeave = await Leave.updateStatus(
-        businessOwnerId,
+      const updatedLeave = await Leave.updateApprovalStatus(
+        context.ownerUserId,
         employeeId,
         leaveId,
-        status,
-        approvedBy,
-        approvalNote
+        {
+          approvalStatus: status,
+          approvalNote: note,
+          reviewerId: req.user.uid,
+        }
       );
 
       res.status(200).json({
-        message: `Leave ${status} successfully`,
+        message: "Leave approval status updated successfully",
         data: updatedLeave,
       });
     } catch (error) {
-      console.error("Approve leave error:", error);
+      console.error("Error approving leave:", error);
       res.status(500).json({
-        error: "Internal server error",
-        message: "Failed to update leave status",
+        error: "Internal Server Error",
+        message: error.message || "Failed to update leave approval status",
+      });
+    }
+  }
+);
+
+// PATCH /employees/:employeeId/leaves/:leaveId/revise - Revise and approve leave (only for manager/owner)
+router.patch(
+  "/:leaveId/revise",
+  authenticateToken,
+  isManagerOrOwner,
+  [
+    param("employeeId").isString().withMessage("Employee ID must be a string"),
+    param("leaveId").isString().withMessage("Leave ID must be a string"),
+    body("type")
+      .optional()
+      .isIn(["günlük", "yıllık", "mazeret"])
+      .withMessage("Leave type must be one of: günlük, yıllık, mazeret"),
+    body("startDate")
+      .optional()
+      .isISO8601()
+      .withMessage("Start date must be a valid date (YYYY-MM-DD)"),
+    body("endDate")
+      .optional()
+      .isISO8601()
+      .withMessage("End date must be a valid date (YYYY-MM-DD)"),
+    body("reason")
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage("Reason must not exceed 500 characters"),
+    body("status")
+      .optional()
+      .isIn(Leave.getApprovalStatuses())
+      .withMessage(
+        `Status must be one of: ${Leave.getApprovalStatuses().join(", ")}`
+      ),
+    body("note")
+      .optional()
+      .isString()
+      .isLength({ max: 1000 })
+      .withMessage("Note must be a string up to 1000 characters"),
+  ],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { employeeId, leaveId } = req.params;
+      const { type, startDate, endDate, reason, status, note } = req.body;
+
+      const context = await resolveLeaveContext(req, employeeId);
+      if (context.errorResponse) {
+        return res
+          .status(context.errorResponse.status)
+          .json(context.errorResponse.body);
+      }
+
+      // Check if leave exists
+      const existingLeave = await Leave.findById(
+        context.ownerUserId,
+        employeeId,
+        leaveId
+      );
+      if (!existingLeave) {
+        return res.status(404).json({
+          error: "Not Found",
+          message: "Leave not found",
+        });
+      }
+
+      // Build update data
+      const updateData = {};
+      if (type !== undefined) updateData.type = type;
+      if (startDate !== undefined) updateData.startDate = startDate;
+      if (endDate !== undefined) updateData.endDate = endDate;
+      if (reason !== undefined) updateData.reason = reason;
+
+      // Validate dates if provided
+      const finalStartDate = startDate || existingLeave.startDate;
+      const finalEndDate = endDate || existingLeave.endDate;
+      try {
+        Leave.validateDates(finalStartDate, finalEndDate);
+      } catch (dateError) {
+        return res.status(400).json({
+          error: "Invalid dates",
+          message: dateError.message,
+        });
+      }
+
+      // Update leave data
+      if (Object.keys(updateData).length > 0) {
+        await Leave.updateById(
+          context.ownerUserId,
+          employeeId,
+          leaveId,
+          updateData
+        );
+      }
+
+      // If status is provided, update approval status
+      if (status) {
+        await Leave.updateApprovalStatus(
+          context.ownerUserId,
+          employeeId,
+          leaveId,
+          {
+            approvalStatus: status,
+            approvalNote: note,
+            reviewerId: req.user.uid,
+          }
+        );
+      }
+
+      // Return updated leave
+      const updatedLeave = await Leave.findById(
+        context.ownerUserId,
+        employeeId,
+        leaveId
+      );
+
+      res.status(200).json({
+        message: "Leave revised successfully",
+        data: updatedLeave,
+      });
+    } catch (error) {
+      console.error("Error revising leave:", error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: error.message || "Failed to revise leave",
       });
     }
   }
