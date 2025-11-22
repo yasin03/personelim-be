@@ -2,6 +2,8 @@
 
 Bu doküman yalnızca son backend revizyonlarını özetler ve frontend ekibine entegrasyon için rehberlik eder.
 
+**📖 Detaylı Frontend Entegrasyon Rehberi için:** [leave-pending-guide.md](./leave-pending-guide.md) dosyasına bakın.
+
 ### 1. Leave Modelindeki Alanlar
 
 - `status`: `"pending" | "approved" | "rejected"` (varsayılan `"pending"`).

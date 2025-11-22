@@ -451,6 +451,61 @@ class Leave {
       return !(leave.status === "pending" && startDate < today);
     });
   }
+
+  // Get all pending leaves for all employees of an owner (optimized with parallel queries)
+  static async findAllPendingByOwner(userId, options = {}) {
+    try {
+      const { Employee } = require("./Employee");
+      
+      // Get all employees first (only IDs needed for filtering)
+      const employeesResult = await Employee.findAllByUserId(userId);
+      const employees = Array.isArray(employeesResult) 
+        ? employeesResult 
+        : (employeesResult.employees || []);
+
+      if (!Array.isArray(employees) || employees.length === 0) {
+        return [];
+      }
+
+      // Create employee ID set for quick lookup
+      const employeeIds = new Set(employees.map((emp) => emp.id));
+      
+      // Create employee map for later use
+      const employeeMap = new Map();
+      employees.forEach((emp) => {
+        employeeMap.set(emp.id, emp);
+      });
+
+      // Get all pending leaves in parallel for all employees
+      // This is much faster than sequential queries
+      const leavePromises = employees.map(async (employee) => {
+        try {
+          const result = await this.findAllByEmployeeId(userId, employee.id, {
+            status: "pending",
+          });
+          const leaves = Array.isArray(result) ? result : (result.leaves || []);
+          return leaves.map((leave) => ({
+            ...leave,
+            employeeId: employee.id,
+            _employee: employee, // Store employee data for later use
+          }));
+        } catch (error) {
+          console.error(`Error getting leaves for employee ${employee.id}:`, error);
+          return [];
+        }
+      });
+
+      // Wait for all queries to complete in parallel
+      const allLeavesArrays = await Promise.all(leavePromises);
+      
+      // Flatten the array
+      const allLeaves = allLeavesArrays.flat();
+
+      return allLeaves;
+    } catch (error) {
+      throw new Error(`Failed to get all pending leaves: ${error.message}`);
+    }
+  }
 }
 
 module.exports = Leave;

@@ -346,64 +346,36 @@ router.get(
         });
       }
 
-      // Get all employees
+      // Get all pending leaves for all employees (optimized with parallel queries)
+      const allPendingLeavesRaw = await Leave.findAllPendingByOwner(ownerUserId);
+
+      // Get employee data for mapping
       const employeesResult = await Employee.findAllByUserId(ownerUserId);
       const employees = Array.isArray(employeesResult) 
         ? employeesResult 
         : (employeesResult.employees || []);
+      
+      const employeeMap = new Map();
+      employees.forEach((emp) => {
+        employeeMap.set(emp.id, emp);
+      });
 
-      if (!Array.isArray(employees) || employees.length === 0) {
-        return res.status(200).json({
-          message: "Pending leaves retrieved successfully",
-          data: {
-            leaves: [],
-            total: 0,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            totalPages: 0,
+      // Map leaves with employee info
+      const allPendingLeaves = allPendingLeavesRaw.map((leave) => {
+        const employee = employeeMap.get(leave.employeeId) || leave._employee || {};
+        return {
+          ...leave,
+          employee: {
+            id: employee.id || leave.employeeId,
+            firstName: employee.firstName || "",
+            lastName: employee.lastName || "",
+            name: `${employee.firstName || ""} ${employee.lastName || ""}`.trim() || "Unknown",
+            email: employee.email || null,
+            department: employee.department || null,
+            position: employee.position || null,
           },
-        });
-      }
-
-      const allPendingLeaves = [];
-
-      // Get pending leaves for each employee
-      for (const employee of employees) {
-        try {
-          const options = {
-            status: "pending",
-          };
-          const result = await Leave.findAllByEmployeeId(
-            ownerUserId,
-            employee.id,
-            options
-          );
-
-          const leaves = Array.isArray(result) 
-            ? result 
-            : (result.leaves || []);
-          
-          if (Array.isArray(leaves) && leaves.length > 0) {
-            const leavesWithEmployeeInfo = leaves.map((leave) => ({
-              ...leave,
-              employee: {
-                id: employee.id,
-                firstName: employee.firstName || "",
-                lastName: employee.lastName || "",
-                name: `${employee.firstName || ""} ${employee.lastName || ""}`.trim() || "Unknown",
-                email: employee.email || null,
-                department: employee.department || null,
-                position: employee.position || null,
-              },
-            }));
-
-            allPendingLeaves.push(...leavesWithEmployeeInfo);
-          }
-        } catch (error) {
-          // Log error but continue with other employees
-          console.error(`Error getting leaves for employee ${employee.id}:`, error);
-        }
-      }
+        };
+      });
 
       // Filter expired leaves if needed
       const includeExpiredBool = includeExpired === "true" || includeExpired === true;
