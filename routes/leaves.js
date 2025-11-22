@@ -292,7 +292,142 @@ router.get(
   }
 );
 
-// GET /leaves/pending - Get all pending leaves (Owner/Manager only)
+// GET /employees/:employeeId/leaves/all - Get all leaves for all employees (Owner/Manager only)
+// NOTE: This route must be before /pending and /:leaveId to avoid route conflicts
+router.get(
+  "/all",
+  authenticateToken,
+  isManagerOrOwner,
+  [
+    query("page")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Page must be a positive integer"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage("Limit must be between 1-100"),
+    query("status")
+      .optional()
+      .isIn(["pending", "approved", "rejected"])
+      .withMessage("Status must be one of: pending, approved, rejected"),
+    query("type")
+      .optional()
+      .isIn(["günlük", "yıllık", "mazeret"])
+      .withMessage("Type must be one of: günlük, yıllık, mazeret"),
+    query("includeExpired")
+      .optional()
+      .isBoolean()
+      .withMessage("includeExpired must be a boolean"),
+  ],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { page = 1, limit = 10, status, type, includeExpired = false } = req.query;
+
+      // Resolve owner user ID
+      let ownerUserId;
+      if (req.user.role === "manager") {
+        const businessId = req.user.userData?.businessId;
+        if (!businessId) {
+          return res.status(403).json({
+            error: "Forbidden",
+            message: "Associated business not found for manager user",
+          });
+        }
+        const business = await Business.findById(businessId);
+        if (!business || !business.ownerId) {
+          return res.status(404).json({
+            error: "Not Found",
+            message: "Business owner could not be determined",
+          });
+        }
+        ownerUserId = business.ownerId;
+      } else {
+        ownerUserId = req.user.uid;
+      }
+
+      if (!ownerUserId) {
+        return res.status(500).json({
+          error: "Internal Server Error",
+          message: "Owner user ID could not be determined",
+        });
+      }
+
+      // Get all leaves for all employees (optimized with parallel queries)
+      const options = {};
+      if (status) options.status = status;
+      if (type) options.type = type;
+      
+      const allLeavesRaw = await Leave.findAllByOwner(ownerUserId, options);
+
+      // Get employee data for mapping
+      const employeesResult = await Employee.findAllByUserId(ownerUserId);
+      const employees = Array.isArray(employeesResult) 
+        ? employeesResult 
+        : (employeesResult.employees || []);
+      
+      const employeeMap = new Map();
+      employees.forEach((emp) => {
+        employeeMap.set(emp.id, emp);
+      });
+
+      // Map leaves with employee info
+      const allLeaves = allLeavesRaw.map((leave) => {
+        const employee = employeeMap.get(leave.employeeId) || leave._employee || {};
+        return {
+          ...leave,
+          employee: {
+            id: employee.id || leave.employeeId,
+            firstName: employee.firstName || "",
+            lastName: employee.lastName || "",
+            name: `${employee.firstName || ""} ${employee.lastName || ""}`.trim() || "Unknown",
+            email: employee.email || null,
+            department: employee.department || null,
+            position: employee.position || null,
+          },
+        };
+      });
+
+      // Filter expired leaves if needed (only for pending status)
+      const includeExpiredBool = includeExpired === "true" || includeExpired === true;
+      const filteredLeaves = Array.isArray(allLeaves) && allLeaves.length > 0
+        ? Leave.filterExpiredLeaves(allLeaves, includeExpiredBool)
+        : [];
+
+      // Sort by creation date (newest first)
+      filteredLeaves.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      // Apply pagination
+      const startIndex = (parseInt(page) - 1) * parseInt(limit);
+      const endIndex = startIndex + parseInt(limit);
+      const paginatedLeaves = filteredLeaves.slice(startIndex, endIndex);
+
+      res.status(200).json({
+        message: "Leaves retrieved successfully",
+        data: {
+          leaves: paginatedLeaves,
+          total: filteredLeaves.length,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(filteredLeaves.length / parseInt(limit)),
+        },
+      });
+    } catch (error) {
+      console.error("Error getting all leaves:", error);
+      console.error("Error stack:", error.stack);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: error.message || "Failed to get leaves",
+        details: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      });
+    }
+  }
+);
+
+// GET /employees/:employeeId/leaves/pending - Get all pending leaves (Owner/Manager only)
 // NOTE: This route must be before /:leaveId to avoid route conflicts
 router.get(
   "/pending",

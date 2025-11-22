@@ -6,13 +6,28 @@ Bu doküman, Owner ve Manager kullanıcılarının tüm bekleyen izin taleplerin
 
 Owner ve Manager kullanıcıları, kendi işletmelerindeki tüm employee'lerin bekleyen (pending) izin taleplerini tek bir endpoint üzerinden görüntüleyebilir. Bu endpoint, tüm employee'lerin pending izinlerini paralel olarak sorgulayarak optimize edilmiştir.
 
-## 🔗 Endpoint
+## 🔗 Endpoint'ler
+
+### 1. Tüm İzinleri Getirme
+
+```
+GET /employees/:employeeId/leaves/all
+```
+
+**Not:** `employeeId` parametresi route'da bulunur ancak kullanılmaz. Herhangi bir değer olabilir (örn: "any", "all"). Backend bu parametreyi görmezden gelir.
+
+- Tüm employee'lerin tüm izinlerini getirir (pending, approved, rejected)
+- Status ve type parametreleri ile filtreleme yapılabilir
+
+### 2. Bekleyen İzinleri Getirme
 
 ```
 GET /employees/:employeeId/leaves/pending
 ```
 
 **Not:** `employeeId` parametresi route'da bulunur ancak kullanılmaz. Herhangi bir değer olabilir (örn: "any", "all", "pending"). Backend bu parametreyi görmezden gelir.
+
+- Sadece bekleyen (pending) izinleri getirir
 
 ## 🔐 Yetkilendirme
 
@@ -21,6 +36,18 @@ GET /employees/:employeeId/leaves/pending
 - **Employee kullanıcıları bu endpoint'e erişemez** (403 Forbidden)
 
 ## 📥 Query Parametreleri
+
+### `/all` Endpoint'i için:
+
+| Parametre | Tip | Zorunlu | Varsayılan | Açıklama |
+|-----------|-----|---------|------------|----------|
+| `page` | number | Hayır | 1 | Sayfa numarası (1'den başlar) |
+| `limit` | number | Hayır | 10 | Sayfa başına kayıt sayısı (max: 100) |
+| `status` | string | Hayır | - | İzin durumu: `pending`, `approved`, `rejected` |
+| `type` | string | Hayır | - | İzin tipi: `günlük`, `yıllık`, `mazeret` |
+| `includeExpired` | boolean | Hayır | false | Süresi geçmiş pending izinleri dahil et |
+
+### `/pending` Endpoint'i için:
 
 | Parametre | Tip | Zorunlu | Varsayılan | Açıklama |
 |-----------|-----|---------|------------|----------|
@@ -169,6 +196,44 @@ import { PendingLeavesResponse } from "../types/leave";
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000";
 
 export const leaveService = {
+  /**
+   * Tüm izin taleplerini getir (pending, approved, rejected)
+   * @param page Sayfa numarası
+   * @param limit Sayfa başına kayıt sayısı
+   * @param status İzin durumu (opsiyonel)
+   * @param type İzin tipi (opsiyonel)
+   * @param includeExpired Süresi geçmiş izinleri dahil et
+   */
+  async getAllLeaves(
+    page: number = 1,
+    limit: number = 10,
+    status?: "pending" | "approved" | "rejected",
+    type?: "günlük" | "yıllık" | "mazeret",
+    includeExpired: boolean = false
+  ): Promise<PendingLeavesResponse> {
+    const token = localStorage.getItem("authToken");
+    
+    const params: any = {
+      page,
+      limit,
+      includeExpired,
+    };
+    if (status) params.status = status;
+    if (type) params.type = type;
+    
+    const response = await axios.get<PendingLeavesResponse>(
+      `${API_BASE_URL}/employees/any/leaves/all`,
+      {
+        params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    return response.data;
+  },
+
   /**
    * Tüm bekleyen izin taleplerini getir
    * @param page Sayfa numarası

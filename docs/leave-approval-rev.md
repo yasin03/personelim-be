@@ -16,7 +16,29 @@ Tüm listeleme ve tekil sorgular bu alanları döndürür. Leave oluşturulurken
 
 ### 2. Yeni/Güncellenmiş Endpoint'ler
 
-#### 2.1. Bekleyen İzinleri Listeleme Endpoint'i (Yeni)
+#### 2.1. Tüm İzinleri Listeleme Endpoint'i (Yeni)
+
+```
+GET /employees/:employeeId/leaves/all
+```
+
+**Not:** `employeeId` parametresi route'da bulunur ancak kullanılmaz; tüm employee'lerin tüm izinleri döner.
+
+- **Yetki:** `owner` ve `manager`.
+- **Query Parameters:**
+  - `page` (opsiyonel): Sayfa numarası (varsayılan: 1)
+  - `limit` (opsiyonel): Sayfa başına kayıt sayısı (varsayılan: 10, max: 100)
+  - `status` (opsiyonel): İzin durumuna göre filtreleme (`pending`, `approved`, `rejected`)
+  - `type` (opsiyonel): İzin tipine göre filtreleme (`günlük`, `yıllık`, `mazeret`)
+  - `includeExpired` (opsiyonel): Süresi geçmiş pending izinleri dahil et (varsayılan: false)
+- **Açıklama:** Tüm employee'lerin tüm izin taleplerini listeler (pending, approved, rejected). Her izin için employee bilgileri de döner.
+- **Kullanım Örnekleri:**
+  - Tüm izinler: `GET /employees/any/leaves/all`
+  - Sadece onaylanmış: `GET /employees/any/leaves/all?status=approved`
+  - Sadece yıllık izinler: `GET /employees/any/leaves/all?type=yıllık`
+  - Onaylanmış yıllık izinler: `GET /employees/any/leaves/all?status=approved&type=yıllık`
+
+#### 2.2. Bekleyen İzinleri Listeleme Endpoint'i (Yeni)
 
 ```
 GET /employees/:employeeId/leaves/pending
@@ -68,7 +90,7 @@ GET /employees/:employeeId/leaves/pending
   - İzinler oluşturulma tarihine göre yeni → eski sıralanır.
   - Manager'lar için businessId üzerinden owner UID'si çözümlenir.
 
-#### 2.2. Onay/Reddetme Endpoint'i (Güncellendi)
+#### 2.3. Onay/Reddetme Endpoint'i (Güncellendi)
 
 ```
 PATCH /employees/:employeeId/leaves/:leaveId/approve
@@ -87,7 +109,7 @@ PATCH /employees/:employeeId/leaves/:leaveId/approve
 - `status: "pending"` gönderilirse onay durumu sıfırlanır (onaycı ve tarih null olur).
 - Başarılı yanıt: Güncellenmiş leave nesnesi.
 
-#### 2.2. Revize ve Onaylama Endpoint'i (Yeni)
+#### 2.4. Revize ve Onaylama Endpoint'i (Yeni)
 
 ```
 PATCH /employees/:employeeId/leaves/:leaveId/revise
