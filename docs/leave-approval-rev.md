@@ -14,7 +14,59 @@ Tüm listeleme ve tekil sorgular bu alanları döndürür. Leave oluşturulurken
 
 ### 2. Yeni/Güncellenmiş Endpoint'ler
 
-#### 2.1. Onay/Reddetme Endpoint'i (Güncellendi)
+#### 2.1. Bekleyen İzinleri Listeleme Endpoint'i (Yeni)
+
+```
+GET /employees/:employeeId/leaves/pending
+```
+
+**Not:** `employeeId` parametresi route'da bulunur ancak kullanılmaz; tüm employee'lerin bekleyen izinleri döner.
+
+- **Yetki:** `owner` ve `manager`.
+- **Query Parameters:**
+  - `page` (opsiyonel): Sayfa numarası (varsayılan: 1)
+  - `limit` (opsiyonel): Sayfa başına kayıt sayısı (varsayılan: 10, max: 100)
+  - `includeExpired` (opsiyonel): Süresi geçmiş pending izinleri dahil et (varsayılan: false)
+- **Açıklama:** Tüm employee'lerin bekleyen (pending) izin taleplerini listeler. Her izin için employee bilgileri de döner.
+- **Yanıt Örneği:**
+  ```json
+  {
+    "message": "Pending leaves retrieved successfully",
+    "data": {
+      "leaves": [
+        {
+          "id": "leave-id",
+          "employeeId": "employee-id",
+          "type": "yıllık",
+          "startDate": "2024-12-20",
+          "endDate": "2024-12-25",
+          "reason": "Tatil",
+          "status": "pending",
+          "createdAt": "2024-12-15T10:00:00.000Z",
+          "employee": {
+            "id": "employee-id",
+            "firstName": "Ahmet",
+            "lastName": "Yılmaz",
+            "name": "Ahmet Yılmaz",
+            "email": "ahmet@example.com",
+            "department": "IT",
+            "position": "Developer"
+          }
+        }
+      ],
+      "total": 15,
+      "page": 1,
+      "limit": 10,
+      "totalPages": 2
+    }
+  }
+  ```
+- **Notlar:**
+  - Varsayılan olarak süresi geçmiş pending izinler filtrelenir.
+  - İzinler oluşturulma tarihine göre yeni → eski sıralanır.
+  - Manager'lar için businessId üzerinden owner UID'si çözümlenir.
+
+#### 2.2. Onay/Reddetme Endpoint'i (Güncellendi)
 
 ```
 PATCH /employees/:employeeId/leaves/:leaveId/approve
@@ -71,6 +123,25 @@ PATCH /employees/:employeeId/leaves/:leaveId/revise
 ### 5. FE İçin Akış Notları
 
 #### 5.1. İzin Listeleme
+
+- **Bekleyen İzinleri Getirme (Owner/Manager):**
+  ```ts
+  // Tüm bekleyen izinleri getir (expired hariç)
+  const response = await apiClient.get(
+    `/employees/any/leaves/pending?page=1&limit=10`
+  );
+  
+  // Expired izinleri de dahil et
+  const responseWithExpired = await apiClient.get(
+    `/employees/any/leaves/pending?page=1&limit=10&includeExpired=true`
+  );
+  
+  // Her izin için employee bilgisi de döner
+  response.data.leaves.forEach(leave => {
+    console.log(leave.employee.name); // Employee adı
+    console.log(leave.employee.department); // Department
+  });
+  ```
 
 - İzin listelerinde expired pending izinler varsayılan olarak gösterilmez.
 - Eğer tüm izinleri (expired dahil) görmek istenirse: `?includeExpired=true` parametresi eklenmelidir.

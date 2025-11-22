@@ -1,5 +1,5 @@
 const express = require("express");
-const { body, validationResult, param } = require("express-validator");
+const { body, validationResult, param, query } = require("express-validator");
 const Leave = require("../models/Leave");
 const { Employee } = require("../models/Employee");
 const Business = require("../models/Business");
@@ -287,6 +287,124 @@ router.get(
       res.status(500).json({
         error: "Internal server error",
         message: "Failed to retrieve leaves",
+      });
+    }
+  }
+);
+
+// GET /leaves/pending - Get all pending leaves (Owner/Manager only)
+// NOTE: This route must be before /:leaveId to avoid route conflicts
+router.get(
+  "/pending",
+  authenticateToken,
+  isManagerOrOwner,
+  [
+    query("page")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Page must be a positive integer"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage("Limit must be between 1-100"),
+    query("includeExpired")
+      .optional()
+      .isBoolean()
+      .withMessage("includeExpired must be a boolean"),
+  ],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { page = 1, limit = 10, includeExpired = false } = req.query;
+
+      // Resolve owner user ID
+      let ownerUserId;
+      if (req.user.role === "manager") {
+        const businessId = req.user.userData?.businessId;
+        if (!businessId) {
+          return res.status(403).json({
+            error: "Forbidden",
+            message: "Associated business not found for manager user",
+          });
+        }
+        const business = await Business.findById(businessId);
+        if (!business || !business.ownerId) {
+          return res.status(404).json({
+            error: "Not Found",
+            message: "Business owner could not be determined",
+          });
+        }
+        ownerUserId = business.ownerId;
+      } else {
+        ownerUserId = req.user.uid;
+      }
+
+      // Get all employees
+      const employeesResult = await Employee.findAllByUserId(ownerUserId);
+      const employees = employeesResult.employees || employeesResult;
+
+      const allPendingLeaves = [];
+
+      // Get pending leaves for each employee
+      for (const employee of employees) {
+        const options = {
+          status: "pending",
+        };
+        const result = await Leave.findAllByEmployeeId(
+          ownerUserId,
+          employee.id,
+          options
+        );
+
+        const leaves = result.leaves || result;
+        const leavesWithEmployeeInfo = leaves.map((leave) => ({
+          ...leave,
+          employee: {
+            id: employee.id,
+            firstName: employee.firstName,
+            lastName: employee.lastName,
+            name: `${employee.firstName} ${employee.lastName}`,
+            email: employee.email,
+            department: employee.department,
+            position: employee.position,
+          },
+        }));
+
+        allPendingLeaves.push(...leavesWithEmployeeInfo);
+      }
+
+      // Filter expired leaves if needed
+      const includeExpiredBool = includeExpired === "true" || includeExpired === true;
+      const filteredLeaves = Leave.filterExpiredLeaves(
+        allPendingLeaves,
+        includeExpiredBool
+      );
+
+      // Sort by creation date (newest first)
+      filteredLeaves.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      // Apply pagination
+      const startIndex = (parseInt(page) - 1) * parseInt(limit);
+      const endIndex = startIndex + parseInt(limit);
+      const paginatedLeaves = filteredLeaves.slice(startIndex, endIndex);
+
+      res.status(200).json({
+        message: "Pending leaves retrieved successfully",
+        data: {
+          leaves: paginatedLeaves,
+          total: filteredLeaves.length,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(filteredLeaves.length / parseInt(limit)),
+        },
+      });
+    } catch (error) {
+      console.error("Error getting pending leaves:", error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: error.message || "Failed to get pending leaves",
       });
     }
   }
