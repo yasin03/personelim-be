@@ -286,23 +286,45 @@ router.get(
   isManagerOrOwner,
   async (req, res) => {
     try {
-      const userId = req.user.uid;
+      // Resolve owner user ID (for manager support)
+      let ownerUserId;
+      if (req.user.role === "manager") {
+        const Business = require("../models/Business");
+        const businessId = req.user.userData?.businessId;
+        if (!businessId) {
+          return res.status(403).json({
+            error: "Forbidden",
+            message: "Associated business not found for manager user",
+          });
+        }
+        const business = await Business.findById(businessId);
+        if (!business || !business.ownerId) {
+          return res.status(404).json({
+            error: "Not Found",
+            message: "Business owner could not be determined",
+          });
+        }
+        ownerUserId = business.ownerId;
+      } else {
+        ownerUserId = req.user.uid;
+      }
 
       // Simple statistics without complex queries
-      const activeResult = await Employee.findAllByUserId(userId);
-      const deletedResult = await Employee.findAllByUserId(userId, {
+      const activeResult = await Employee.findAllByUserId(ownerUserId);
+      const deletedResult = await Employee.findAllByUserId(ownerUserId, {
         onlyDeleted: true,
       });
 
       const statistics = {
-        total: activeResult.total,
-        active: activeResult.total,
-        deleted: deletedResult.total,
+        total: activeResult.total || (activeResult.employees ? activeResult.employees.length : 0),
+        active: activeResult.total || (activeResult.employees ? activeResult.employees.length : 0),
+        deleted: deletedResult.total || (deletedResult.employees ? deletedResult.employees.length : 0),
         departments: {},
       };
 
       // Count by department
-      activeResult.employees.forEach((emp) => {
+      const employees = activeResult.employees || [];
+      employees.forEach((emp) => {
         if (emp.department) {
           statistics.departments[emp.department] =
             (statistics.departments[emp.department] || 0) + 1;
@@ -315,9 +337,11 @@ router.get(
       });
     } catch (error) {
       console.error("Get employee statistics error:", error);
+      console.error("Error stack:", error.stack);
       res.status(500).json({
         error: "Internal server error",
         message: "Failed to retrieve employee statistics",
+        details: process.env.NODE_ENV === "development" ? error.message : undefined,
       });
     }
   }

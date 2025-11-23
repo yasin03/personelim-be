@@ -661,7 +661,10 @@ router.get("/statistics/:employeeId?", authenticateToken, async (req, res) => {
       });
     } else {
       // Get statistics for all employees
-      const employees = await Employee.findAll(req.user.uid);
+      const employeesResult = await Employee.findAllByUserId(req.user.uid);
+      const employees = Array.isArray(employeesResult)
+        ? employeesResult
+        : employeesResult.employees || [];
       const allStats = {
         total: 0,
         approved: 0,
