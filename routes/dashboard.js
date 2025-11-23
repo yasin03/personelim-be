@@ -127,13 +127,6 @@ router.get(
                     ...ts,
                     employeeId: employee.id,
                   }));
-                  const timesheets = Array.isArray(result)
-                    ? result
-                    : result.timesheets || [];
-                  return timesheets.map((ts) => ({
-                    ...ts,
-                    employeeId: employee.id,
-                  }));
                 } catch (error) {
                   console.error(
                     `Error getting timesheets for employee ${employee.id}:`,

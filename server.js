@@ -150,6 +150,7 @@ app.use("/employees/:employeeId/salary-payments", salaryPaymentRoutes);
 app.use("/advances", advanceRoutes);
 app.use("/business", businessRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/dashboard", dashboardRoutes);
 
 // Anasayfa root route
 app.get("/", (req, res) => {
