@@ -157,7 +157,10 @@ router.get("/", authenticateToken, async (req, res) => {
       });
     } else {
       // Get advance requests for all employees
-      const employees = await Employee.findAll(req.user.uid);
+      const employeesResult = await Employee.findAllByUserId(req.user.uid);
+      const employees = Array.isArray(employeesResult)
+        ? employeesResult
+        : employeesResult.employees || [];
       const allAdvances = [];
 
       for (const employee of employees) {

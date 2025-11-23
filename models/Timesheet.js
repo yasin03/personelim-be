@@ -125,6 +125,11 @@ class Timesheet {
         query = query.where("status", "==", options.status);
       }
 
+      // Filter by approvalStatus if specified
+      if (options.approvalStatus) {
+        query = query.where("approvalStatus", "==", options.approvalStatus);
+      }
+
       // Order by date
       query = query.orderBy("date", "desc");
 
