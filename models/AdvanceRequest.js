@@ -130,6 +130,48 @@ class AdvanceRequest {
     }
   }
 
+  // Get all pending advance requests for all employees of an owner (optimized with parallel queries)
+  static async findAllPendingByOwner(userId, options = {}) {
+    try {
+      const { Employee } = require("./Employee");
+      
+      // Get all employees first
+      const employeesResult = await Employee.findAllByUserId(userId);
+      const employees = Array.isArray(employeesResult) 
+        ? employeesResult 
+        : (employeesResult.employees || []);
+
+      if (!Array.isArray(employees) || employees.length === 0) {
+        return [];
+      }
+
+      // Get all pending advance requests in parallel for all employees
+      const advancePromises = employees.map(async (employee) => {
+        try {
+          const result = await this.findAllByEmployeeId(userId, employee.id, {
+            status: "pending",
+          });
+          const advances = Array.isArray(result) ? result : (result.advances || []);
+          return advances.map((adv) => ({
+            ...adv,
+            employeeId: employee.id,
+            _employee: employee,
+          }));
+        } catch (error) {
+          console.error(`Error getting advances for employee ${employee.id}:`, error);
+          return [];
+        }
+      });
+
+      const allAdvancesArrays = await Promise.all(advancePromises);
+      const allAdvances = allAdvancesArrays.flat();
+
+      return allAdvances;
+    } catch (error) {
+      throw new Error(`Failed to get all pending advance requests: ${error.message}`);
+    }
+  }
+
   // Update advance request
   static async updateById(userId, employeeId, advanceId, updateData) {
     try {

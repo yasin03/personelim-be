@@ -382,6 +382,48 @@ class Timesheet {
     return [...APPROVAL_STATUS_VALUES];
   }
 
+  // Get all pending timesheets for all employees of an owner (optimized with parallel queries)
+  static async findAllPendingByOwner(userId, options = {}) {
+    try {
+      const { Employee } = require("./Employee");
+      
+      // Get all employees first
+      const employeesResult = await Employee.findAllByUserId(userId);
+      const employees = Array.isArray(employeesResult) 
+        ? employeesResult 
+        : (employeesResult.employees || []);
+
+      if (!Array.isArray(employees) || employees.length === 0) {
+        return [];
+      }
+
+      // Get all pending timesheets in parallel for all employees
+      const timesheetPromises = employees.map(async (employee) => {
+        try {
+          const result = await this.findAllByEmployeeId(userId, employee.id, {
+            approvalStatus: "pending",
+          });
+          const timesheets = Array.isArray(result) ? result : (result.timesheets || []);
+          return timesheets.map((ts) => ({
+            ...ts,
+            employeeId: employee.id,
+            _employee: employee,
+          }));
+        } catch (error) {
+          console.error(`Error getting timesheets for employee ${employee.id}:`, error);
+          return [];
+        }
+      });
+
+      const allTimesheetsArrays = await Promise.all(timesheetPromises);
+      const allTimesheets = allTimesheetsArrays.flat();
+
+      return allTimesheets;
+    } catch (error) {
+      throw new Error(`Failed to get all pending timesheets: ${error.message}`);
+    }
+  }
+
   // Calculate hours worked between check-in and check-out times
   static calculateHoursWorked(checkInTime, checkOutTime) {
     try {

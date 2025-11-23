@@ -34,7 +34,31 @@ const resolveOwnerUserId = async (req) => {
   return { ownerUserId: req.user.uid };
 };
 
+// Helper function to get employee map for quick lookup
+const getEmployeeMap = async (ownerUserId) => {
+  const employeesResult = await Employee.findAllByUserId(ownerUserId);
+  const employees = Array.isArray(employeesResult)
+    ? employeesResult
+    : employeesResult.employees || [];
+
+  const employeeMap = new Map();
+  employees.forEach((emp) => {
+    employeeMap.set(emp.id, {
+      id: emp.id,
+      firstName: emp.firstName || "",
+      lastName: emp.lastName || "",
+      name: `${emp.firstName || ""} ${emp.lastName || ""}`.trim() || "Unknown",
+      email: emp.email || null,
+      department: emp.department || null,
+      position: emp.position || null,
+    });
+  });
+
+  return { employees, employeeMap };
+};
+
 // GET /dashboard/pending-requests - Get pending requests summary (Owner/Manager only)
+// This endpoint collects all pending requests (leaves, timesheets, advances) that need approval
 router.get(
   "/pending-requests",
   authenticateToken,
@@ -51,67 +75,53 @@ router.get(
 
       const { ownerUserId } = ownerContext;
 
-      // Get all employees
-      const employeesResult = await Employee.findAllByUserId(ownerUserId);
-      const employees = Array.isArray(employeesResult)
-        ? employeesResult
-        : employeesResult.employees || [];
+      // Get employees and create map for quick lookup
+      const { employees, employeeMap } = await getEmployeeMap(ownerUserId);
 
       if (!Array.isArray(employees) || employees.length === 0) {
         return res.status(200).json({
           message: "Pending requests summary retrieved successfully",
           data: {
             total: 0,
-            leaves: {
-              count: 0,
-              recent: [],
-            },
-            timesheets: {
-              count: 0,
-              recent: [],
-            },
-            advances: {
-              count: 0,
-              recent: [],
-            },
+            leaves: { count: 0, recent: [] },
+            timesheets: { count: 0, recent: [] },
+            advances: { count: 0, recent: [] },
             lastUpdated: new Date().toISOString(),
           },
         });
       }
 
-      // Get pending counts and recent items in parallel
+      // Get all pending requests in parallel (optimized)
       const [pendingLeaves, pendingTimesheets, pendingAdvances] =
         await Promise.all([
           // Get pending leaves
           (async () => {
             try {
               const allPending = await Leave.findAllPendingByOwner(ownerUserId);
-              console.log(`[Dashboard] Found ${allPending.length} pending leaves before filtering`);
               
-              // Don't filter expired leaves in dashboard - show all pending requests
-              // Dashboard is for notification purposes, so we want to see all pending requests
-              const filtered = allPending; // Show all pending, don't filter expired
+              // Don't filter expired in dashboard - show all pending for notification purposes
+              const filtered = allPending;
               
-              console.log(`[Dashboard] After filtering: ${filtered.length} pending leaves`);
-              
-              // Get recent 5
+              // Get recent 5 (most recent first)
               const recent = filtered
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                .slice(0, 5);
-              return {
-                count: filtered.length,
-                recent: recent.map((leave) => ({
+                .slice(0, 5)
+                .map((leave) => ({
                   id: leave.id,
                   employeeId: leave.employeeId,
                   type: leave.type,
                   startDate: leave.startDate,
                   endDate: leave.endDate,
+                  reason: leave.reason,
                   createdAt: leave.createdAt,
-                })),
+                }));
+
+              return {
+                count: filtered.length,
+                recent,
               };
             } catch (error) {
-              console.error("Error getting pending leaves:", error);
-              console.error("Error stack:", error.stack);
+              console.error("[Dashboard] Error getting pending leaves:", error);
               return { count: 0, recent: [] };
             }
           })(),
@@ -119,34 +129,9 @@ router.get(
           // Get pending timesheets
           (async () => {
             try {
-              const allPending = [];
-              const timesheetPromises = employees.map(async (employee) => {
-                try {
-                  const result = await Timesheet.findAllByEmployeeId(
-                    ownerUserId,
-                    employee.id,
-                    { approvalStatus: "pending" }
-                  );
-                  const timesheets = Array.isArray(result)
-                    ? result
-                    : result.timesheets || [];
-                  return timesheets.map((ts) => ({
-                    ...ts,
-                    employeeId: employee.id,
-                  }));
-                } catch (error) {
-                  console.error(
-                    `Error getting timesheets for employee ${employee.id}:`,
-                    error
-                  );
-                  return [];
-                }
-              });
-
-              const allTimesheetsArrays = await Promise.all(timesheetPromises);
-              allPending.push(...allTimesheetsArrays.flat());
-
-              // Get recent 5
+              const allPending = await Timesheet.findAllPendingByOwner(ownerUserId);
+              
+              // Get recent 5 (most recent first)
               const recent = allPending
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .slice(0, 5)
@@ -155,6 +140,8 @@ router.get(
                   employeeId: ts.employeeId,
                   date: ts.date,
                   status: ts.status,
+                  totalHoursWorked: ts.totalHoursWorked,
+                  overtimeHours: ts.overtimeHours,
                   createdAt: ts.createdAt,
                 }));
 
@@ -163,7 +150,7 @@ router.get(
                 recent,
               };
             } catch (error) {
-              console.error("Error getting pending timesheets:", error);
+              console.error("[Dashboard] Error getting pending timesheets:", error);
               return { count: 0, recent: [] };
             }
           })(),
@@ -171,34 +158,9 @@ router.get(
           // Get pending advance requests
           (async () => {
             try {
-              const allPending = [];
-              const advancePromises = employees.map(async (employee) => {
-                try {
-                  const result = await AdvanceRequest.findAllByEmployeeId(
-                    ownerUserId,
-                    employee.id,
-                    { status: "pending" }
-                  );
-                  const advances = Array.isArray(result)
-                    ? result
-                    : result.advances || [];
-                  return advances.map((adv) => ({
-                    ...adv,
-                    employeeId: employee.id,
-                  }));
-                } catch (error) {
-                  console.error(
-                    `Error getting advances for employee ${employee.id}:`,
-                    error
-                  );
-                  return [];
-                }
-              });
-
-              const allAdvancesArrays = await Promise.all(advancePromises);
-              allPending.push(...allAdvancesArrays.flat());
-
-              // Get recent 5
+              const allPending = await AdvanceRequest.findAllPendingByOwner(ownerUserId);
+              
+              // Get recent 5 (most recent first)
               const recent = allPending
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .slice(0, 5)
@@ -215,7 +177,7 @@ router.get(
                 recent,
               };
             } catch (error) {
-              console.error("Error getting pending advances:", error);
+              console.error("[Dashboard] Error getting pending advances:", error);
               return { count: 0, recent: [] };
             }
           })(),
@@ -237,14 +199,15 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Error getting pending requests summary:", error);
+      console.error("[Dashboard] Error getting pending requests summary:", error);
+      console.error("[Dashboard] Error stack:", error.stack);
       res.status(500).json({
         error: "Internal Server Error",
         message: error.message || "Failed to get pending requests summary",
+        details: process.env.NODE_ENV === "development" ? error.stack : undefined,
       });
     }
   }
 );
 
 module.exports = router;
-
