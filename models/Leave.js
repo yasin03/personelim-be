@@ -484,6 +484,7 @@ class Leave {
             status: "pending",
           });
           const leaves = Array.isArray(result) ? result : (result.leaves || []);
+          console.log(`[Leave.findAllPendingByOwner] Employee ${employee.id}: Found ${leaves.length} pending leaves`);
           return leaves.map((leave) => ({
             ...leave,
             employeeId: employee.id,
@@ -500,6 +501,8 @@ class Leave {
       
       // Flatten the array
       const allLeaves = allLeavesArrays.flat();
+
+      console.log(`[Leave.findAllPendingByOwner] Total employees: ${employees.length}, Total pending leaves: ${allLeaves.length}`);
 
       return allLeaves;
     } catch (error) {

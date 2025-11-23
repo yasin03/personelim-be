@@ -483,12 +483,15 @@ router.get(
 
       // Get all pending leaves for all employees (optimized with parallel queries)
       const allPendingLeavesRaw = await Leave.findAllPendingByOwner(ownerUserId);
+      console.log(`[Pending Leaves] Found ${allPendingLeavesRaw.length} pending leaves from findAllPendingByOwner`);
 
       // Get employee data for mapping
       const employeesResult = await Employee.findAllByUserId(ownerUserId);
       const employees = Array.isArray(employeesResult) 
         ? employeesResult 
         : (employeesResult.employees || []);
+      
+      console.log(`[Pending Leaves] Found ${employees.length} employees`);
       
       const employeeMap = new Map();
       employees.forEach((emp) => {

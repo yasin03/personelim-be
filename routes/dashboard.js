@@ -86,8 +86,14 @@ router.get(
           (async () => {
             try {
               const allPending = await Leave.findAllPendingByOwner(ownerUserId);
-              // Filter expired leaves
-              const filtered = Leave.filterExpiredLeaves(allPending, false);
+              console.log(`[Dashboard] Found ${allPending.length} pending leaves before filtering`);
+              
+              // Don't filter expired leaves in dashboard - show all pending requests
+              // Dashboard is for notification purposes, so we want to see all pending requests
+              const filtered = allPending; // Show all pending, don't filter expired
+              
+              console.log(`[Dashboard] After filtering: ${filtered.length} pending leaves`);
+              
               // Get recent 5
               const recent = filtered
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -105,6 +111,7 @@ router.get(
               };
             } catch (error) {
               console.error("Error getting pending leaves:", error);
+              console.error("Error stack:", error.stack);
               return { count: 0, recent: [] };
             }
           })(),
