@@ -97,13 +97,12 @@ router.get(
           // Get pending leaves
           (async () => {
             try {
+              console.log(`[Dashboard] Fetching pending leaves for owner: ${ownerUserId}`);
               const allPending = await Leave.findAllPendingByOwner(ownerUserId);
-              
-              // Don't filter expired in dashboard - show all pending for notification purposes
-              const filtered = allPending;
+              console.log(`[Dashboard] Pending leaves count: ${allPending.length}`);
               
               // Get recent 5 (most recent first)
-              const recent = filtered
+              const recent = allPending
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .slice(0, 5)
                 .map((leave) => ({
@@ -122,6 +121,7 @@ router.get(
               };
             } catch (error) {
               console.error("[Dashboard] Error getting pending leaves:", error);
+              console.error("[Dashboard] Error stack:", error.stack);
               return { count: 0, recent: [] };
             }
           })(),
@@ -188,7 +188,10 @@ router.get(
         pendingTimesheets.count +
         pendingAdvances.count;
 
+      console.log(`[Dashboard] Final counts - Leaves: ${pendingLeaves.count}, Timesheets: ${pendingTimesheets.count}, Advances: ${pendingAdvances.count}, Total: ${total}`);
+
       res.status(200).json({
+        success: true,
         message: "Pending requests summary retrieved successfully",
         data: {
           total,

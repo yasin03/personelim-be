@@ -480,18 +480,44 @@ class Leave {
       // This is much faster than sequential queries
       const leavePromises = employees.map(async (employee) => {
         try {
-          const result = await this.findAllByEmployeeId(userId, employee.id, {
-            status: "pending",
+          // Get ALL leaves first (no status filter), then filter for pending
+          const result = await this.findAllByEmployeeId(userId, employee.id, {});
+          const allLeaves = Array.isArray(result) ? result : (result.leaves || []);
+          
+          // Filter for pending: status must be "pending", null, undefined, or missing
+          // Also check approved field for backward compatibility
+          const pendingLeaves = allLeaves.filter((leave) => {
+            const status = leave.status;
+            const approved = leave.approved;
+            
+            // If status is explicitly "pending", it's pending
+            if (status === "pending") {
+              return true;
+            }
+            
+            // If status is null/undefined/missing and approved is false/undefined, it's pending
+            if ((!status || status === null || status === undefined) && (approved === false || approved === undefined || approved === null)) {
+              return true;
+            }
+            
+            // If status is not "approved" or "rejected", treat as pending (safety check)
+            if (status !== "approved" && status !== "rejected") {
+              return true;
+            }
+            
+            return false;
           });
-          const leaves = Array.isArray(result) ? result : (result.leaves || []);
-          console.log(`[Leave.findAllPendingByOwner] Employee ${employee.id}: Found ${leaves.length} pending leaves`);
-          return leaves.map((leave) => ({
+          
+          console.log(`[Leave.findAllPendingByOwner] Employee ${employee.id}: Found ${allLeaves.length} total leaves, ${pendingLeaves.length} pending`);
+          
+          return pendingLeaves.map((leave) => ({
             ...leave,
             employeeId: employee.id,
             _employee: employee, // Store employee data for later use
           }));
         } catch (error) {
           console.error(`Error getting leaves for employee ${employee.id}:`, error);
+          console.error(`Error stack:`, error.stack);
           return [];
         }
       });
