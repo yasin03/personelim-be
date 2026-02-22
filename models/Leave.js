@@ -1,4 +1,4 @@
-const { db, COLLECTIONS } = require("../config/firebase");
+const { db, COLLECTIONS } = require("../src/config/firebase");
 
 class Leave {
   constructor(data) {
@@ -179,7 +179,7 @@ class Leave {
     leaveId,
     status,
     approvedBy,
-    approvalNote = null
+    approvalNote = null,
   ) {
     try {
       const leaveDoc = await this.getLeavesCollection(userId, employeeId)
@@ -274,7 +274,7 @@ class Leave {
   static async getStatistics(
     userId,
     employeeId,
-    year = new Date().getFullYear()
+    year = new Date().getFullYear(),
   ) {
     try {
       const startOfYear = `${year}-01-01`;

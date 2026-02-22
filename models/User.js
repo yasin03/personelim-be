@@ -1,4 +1,4 @@
-const { db, COLLECTIONS } = require("../config/firebase");
+const { db, COLLECTIONS } = require("../src/config/firebase");
 
 class User {
   constructor(data) {

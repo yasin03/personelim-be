@@ -1,4 +1,4 @@
-const { db, COLLECTIONS } = require("../config/firebase");
+const { db, COLLECTIONS } = require("../src/config/firebase");
 
 class AdvanceRequest {
   constructor(data) {
@@ -36,7 +36,7 @@ class AdvanceRequest {
 
       const advanceRef = await this.getAdvanceRequestsCollection(
         userId,
-        employeeId
+        employeeId,
       ).add({
         employeeId: advanceRequest.employeeId,
         amount: advanceRequest.amount,
@@ -64,7 +64,7 @@ class AdvanceRequest {
     try {
       const advanceDoc = await this.getAdvanceRequestsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(advanceId)
         .get();
@@ -135,7 +135,7 @@ class AdvanceRequest {
     try {
       const advanceDoc = await this.getAdvanceRequestsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(advanceId)
         .get();
@@ -156,7 +156,7 @@ class AdvanceRequest {
       // Return updated advance request data
       const updatedDoc = await this.getAdvanceRequestsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(advanceId)
         .get();
@@ -177,12 +177,12 @@ class AdvanceRequest {
     advanceId,
     status,
     approvedBy,
-    approvalNote = null
+    approvalNote = null,
   ) {
     try {
       const advanceDoc = await this.getAdvanceRequestsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(advanceId)
         .get();
@@ -213,7 +213,7 @@ class AdvanceRequest {
       };
     } catch (error) {
       throw new Error(
-        `Failed to update advance request status: ${error.message}`
+        `Failed to update advance request status: ${error.message}`,
       );
     }
   }
@@ -223,7 +223,7 @@ class AdvanceRequest {
     try {
       const advanceDoc = await this.getAdvanceRequestsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(advanceId)
         .get();
@@ -249,7 +249,7 @@ class AdvanceRequest {
   static async getStatistics(
     userId,
     employeeId,
-    year = new Date().getFullYear()
+    year = new Date().getFullYear(),
   ) {
     try {
       const startOfYear = `${year}-01-01`;
@@ -257,7 +257,7 @@ class AdvanceRequest {
 
       const advancesSnapshot = await this.getAdvanceRequestsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .where("requestDate", ">=", startOfYear)
         .where("requestDate", "<=", endOfYear)
@@ -305,7 +305,7 @@ class AdvanceRequest {
       return stats;
     } catch (error) {
       throw new Error(
-        `Failed to get advance request statistics: ${error.message}`
+        `Failed to get advance request statistics: ${error.message}`,
       );
     }
   }

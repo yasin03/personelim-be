@@ -1,4 +1,4 @@
-const { db, COLLECTIONS } = require("../config/firebase");
+const { db, COLLECTIONS } = require("../src/config/firebase");
 
 // Contract types constant
 const CONTRACT_TYPES = [
@@ -388,7 +388,7 @@ class Employee {
       const filteredEmployees = result.employees.filter(
         (emp) =>
           emp.department &&
-          emp.department.toLowerCase() === department.toLowerCase()
+          emp.department.toLowerCase() === department.toLowerCase(),
       );
 
       // Apply pagination if needed
@@ -413,7 +413,7 @@ class Employee {
       };
     } catch (error) {
       throw new Error(
-        `Failed to find employees by department: ${error.message}`
+        `Failed to find employees by department: ${error.message}`,
       );
     }
   }

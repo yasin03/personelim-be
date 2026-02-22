@@ -1,4 +1,4 @@
-const { db, COLLECTIONS } = require("../config/firebase");
+const { db, COLLECTIONS } = require("../src/config/firebase");
 
 class Timesheet {
   constructor(data) {
@@ -40,13 +40,13 @@ class Timesheet {
       if (timesheet.checkInTime && timesheet.checkOutTime) {
         timesheet.totalHoursWorked = this.calculateHoursWorked(
           timesheet.checkInTime,
-          timesheet.checkOutTime
+          timesheet.checkOutTime,
         );
       }
 
       const timesheetRef = await this.getTimesheetsCollection(
         userId,
-        employeeId
+        employeeId,
       ).add({
         employeeId: timesheet.employeeId,
         userId: timesheet.userId,
@@ -75,7 +75,7 @@ class Timesheet {
     try {
       const timesheetDoc = await this.getTimesheetsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(timesheetId)
         .get();
@@ -102,7 +102,7 @@ class Timesheet {
       if (options.month && options.year) {
         const startDate = `${options.year}-${options.month.padStart(
           2,
-          "0"
+          "0",
         )}-01`;
         const endDate = `${options.year}-${options.month.padStart(2, "0")}-31`;
         query = query
@@ -158,7 +158,7 @@ class Timesheet {
     try {
       const timesheetDoc = await this.getTimesheetsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(timesheetId)
         .get();
@@ -182,7 +182,7 @@ class Timesheet {
         if (checkInTime && checkOutTime) {
           updateFields.totalHoursWorked = this.calculateHoursWorked(
             checkInTime,
-            checkOutTime
+            checkOutTime,
           );
         }
       }
@@ -210,7 +210,7 @@ class Timesheet {
     try {
       const timesheetDoc = await this.getTimesheetsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(timesheetId)
         .get();

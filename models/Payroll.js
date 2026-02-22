@@ -1,4 +1,4 @@
-const { db, COLLECTIONS } = require("../config/firebase");
+const { db, COLLECTIONS } = require("../src/config/firebase");
 
 class Payroll {
   constructor(data) {
@@ -39,12 +39,12 @@ class Payroll {
         userId,
         employeeId,
         payrollData.periodMonth,
-        payrollData.periodYear
+        payrollData.periodYear,
       );
 
       if (existingPayroll) {
         throw new Error(
-          `Payroll already exists for ${payrollData.periodMonth}/${payrollData.periodYear}`
+          `Payroll already exists for ${payrollData.periodMonth}/${payrollData.periodYear}`,
         );
       }
 
@@ -63,7 +63,7 @@ class Payroll {
 
       const payrollRef = await this.getPayrollsCollection(
         userId,
-        employeeId
+        employeeId,
       ).add({
         employeeId: payroll.employeeId,
         userId: payroll.userId,
@@ -118,7 +118,7 @@ class Payroll {
     try {
       const payrollsSnapshot = await this.getPayrollsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .where("periodMonth", "==", month)
         .where("periodYear", "==", year)
@@ -300,7 +300,7 @@ class Payroll {
 
       const payrollsSnapshot = await this.getPayrollsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .where("periodYear", "==", year)
         .get();
@@ -371,7 +371,7 @@ class Payroll {
     const otherAdditions = parseFloat(payrollData.otherAdditions) || 0;
 
     return parseFloat(
-      (grossSalary - totalDeductions + otherAdditions).toFixed(2)
+      (grossSalary - totalDeductions + otherAdditions).toFixed(2),
     );
   }
 

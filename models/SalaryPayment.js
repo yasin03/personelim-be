@@ -1,4 +1,4 @@
-const { db, COLLECTIONS } = require("../config/firebase");
+const { db, COLLECTIONS } = require("../src/config/firebase");
 
 class SalaryPayment {
   constructor(data) {
@@ -35,7 +35,7 @@ class SalaryPayment {
 
       const paymentRef = await this.getSalaryPaymentsCollection(
         userId,
-        employeeId
+        employeeId,
       ).add({
         employeeId: salaryPayment.employeeId,
         userId: salaryPayment.userId,
@@ -62,7 +62,7 @@ class SalaryPayment {
     try {
       const paymentDoc = await this.getSalaryPaymentsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(paymentId)
         .get();
@@ -150,7 +150,7 @@ class SalaryPayment {
     try {
       const paymentDoc = await this.getSalaryPaymentsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(paymentId)
         .get();
@@ -166,7 +166,7 @@ class SalaryPayment {
       // Return updated payment data
       const updatedDoc = await this.getSalaryPaymentsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(paymentId)
         .get();
@@ -185,7 +185,7 @@ class SalaryPayment {
     try {
       const paymentDoc = await this.getSalaryPaymentsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .doc(paymentId)
         .get();
@@ -217,7 +217,7 @@ class SalaryPayment {
 
       const paymentsSnapshot = await this.getSalaryPaymentsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .where("paymentDate", ">=", startOfYear)
         .where("paymentDate", "<=", endOfYear)
@@ -271,7 +271,7 @@ class SalaryPayment {
       return stats;
     } catch (error) {
       throw new Error(
-        `Failed to get salary payment statistics: ${error.message}`
+        `Failed to get salary payment statistics: ${error.message}`,
       );
     }
   }
@@ -281,7 +281,7 @@ class SalaryPayment {
     try {
       const paymentsSnapshot = await this.getSalaryPaymentsCollection(
         userId,
-        employeeId
+        employeeId,
       )
         .where("payrollId", "==", payrollId)
         .orderBy("paymentDate", "desc")
@@ -313,7 +313,7 @@ class SalaryPayment {
       !validPaymentMethods.includes(data.paymentMethod)
     ) {
       throw new Error(
-        `Payment method must be one of: ${validPaymentMethods.join(", ")}`
+        `Payment method must be one of: ${validPaymentMethods.join(", ")}`,
       );
     }
 
