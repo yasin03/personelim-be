@@ -3,22 +3,22 @@
   "name": "personelim-api",
   "builds": [
     {
-      "src": "server.js",
+      "src": "src/server.js",
       "use": "@vercel/node"
     }
   ],
   "rewrites": [
     {
       "source": "/api-docs/(.*)",
-      "destination": "/server.js"
+      "destination": "/src/server.js"
     },
     {
       "source": "/docs",
-      "destination": "/server.js"
+      "destination": "/src/server.js"
     },
     {
       "source": "/(.*)",
-      "destination": "/server.js"
+      "destination": "/src/server.js"
     }
   ],
   "env": {
